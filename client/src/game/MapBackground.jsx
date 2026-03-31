@@ -156,6 +156,10 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
 
     return () => {
       isActive = false;
+      // Clear projections before destroying map so engine doesn't call dead map
+      if (onMapReady) {
+        onMapReady({ latLngToPixel: null, pixelToLatLng: null, width: 0, height: 0, map: null, refZoom: 16, refCenter: { lat: 0, lng: 0 }, refPixelOrigin: { x: 0, y: 0 } });
+      }
       map.remove();
       setMapInstance(null);
     };

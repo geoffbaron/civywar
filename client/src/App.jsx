@@ -96,6 +96,9 @@ function App() {
     engine.setProjections(info.latLngToPixel, info.pixelToLatLng);
     refZoomRef.current = info.refZoom;
 
+    // If map is being destroyed (null projections), just clear refs
+    if (!info.latLngToPixel || !info.map) return;
+
     const bf = BATTLEFIELDS[currentBattleRef.current];
     if (!bf) return;
 
