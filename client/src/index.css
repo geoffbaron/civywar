@@ -516,29 +516,42 @@ body, html {
 
 /* ─── Walkthrough Tutorial Overlay ─── */
 .walkthrough-overlay {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(5, 4, 2, 0.7);
-  backdrop-filter: blur(2px);
+  z-index: 10000;
   animation: fadein 0.2s ease-out;
+}
+
+.walkthrough-mask {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.walkthrough-spotlight {
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.25);
+  pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 .walkthrough-card {
   background: linear-gradient(165deg, #3a332a 0%, #2a2520 100%);
   border: 2px solid #a69176;
   border-radius: 12px;
-  padding: 32px 40px 24px;
+  padding: 24px 28px 20px;
   color: #dfcdb8;
-  max-width: 440px;
-  width: 90%;
+  width: 340px;
   box-shadow: 0 12px 48px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
-  position: relative;
-  animation: fadein 0.25s ease-out;
-  text-align: center;
+  z-index: 10001;
+  animation: wt-slide 0.25s ease-out;
+}
+
+@keyframes wt-slide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .walkthrough-progress {
@@ -563,18 +576,12 @@ body, html {
   transform: scale(1.2);
 }
 
-.walkthrough-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-}
-
 .walkthrough-title {
   font-family: 'Cinzel', 'Georgia', serif;
   color: #ffd700;
-  font-size: 22px;
-  letter-spacing: 2px;
-  margin: 0 0 16px;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  margin: 0 0 12px;
   text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
 }
 

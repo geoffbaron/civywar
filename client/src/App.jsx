@@ -438,7 +438,7 @@ function App() {
            </h1>
         </div>
 
-        <div className="sidebar-scores">
+        <div className="sidebar-scores" data-wt="scoreboard">
            <div className="score-box union">
              <h3>UNION</h3>
              <div className="score-total">{union.total}</div>
@@ -461,7 +461,7 @@ function App() {
         </div>
 
         {/* Battle selector */}
-        <div className="sidebar-section">
+        <div className="sidebar-section" data-wt="battle-selector">
           <label className="sidebar-label">Battle</label>
           <select className="sidebar-select" value={currentBattle}
             onChange={(e) => setCurrentBattle(e.target.value)}>
@@ -495,7 +495,7 @@ function App() {
         </div>
 
         {/* Start / End Game */}
-        <div className="sidebar-section" style={{ textAlign: 'center' }}>
+        <div className="sidebar-section" data-wt="start-btn" style={{ textAlign: 'center' }}>
           {!gameStarted ? (
             <>
               <button className="game-start-btn" onClick={startGame}>Start Battle</button>
@@ -506,7 +506,7 @@ function App() {
           )}
         </div>
 
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" data-wt="controls-hint">
            <p><strong>Select:</strong> Left-click or Drag-box</p>
            <p><strong>Move:</strong> Drag from selected units</p>
            <button className="mute-btn" onClick={() => {
@@ -519,14 +519,14 @@ function App() {
         </div>
       </div>
 
-      <div className="game-container">
+      <div className="game-container" data-wt="map-area">
 
       {/* Zoom + pan controls */}
       <div style={{
         position: 'absolute', top: 12, right: 12, zIndex: 1000,
         display: 'flex', flexDirection: 'column', gap: 4,
         pointerEvents: 'all',
-      }}>
+      }} data-wt="map-controls">
         <button className="map-ctrl-btn" title="Zoom In"
           onClick={() => mapInstanceRef.current?.zoomIn(0.5)}>＋</button>
         <button className="map-ctrl-btn" title="Zoom Out"
@@ -1012,73 +1012,156 @@ function App() {
         const steps = [
           {
             title: 'Welcome, Commander',
-            body: 'You command the Union army (blue) against the Confederate forces (red). Your goal: capture all enemy flags or destroy their army.',
-            icon: '🏛️',
+            body: 'You command the Union army (blue) against the Confederate forces (red). Capture all enemy flags or destroy their army to win.',
+            target: null,
+            position: 'center',
           },
           {
-            title: 'Your Troops',
-            body: 'You have three unit types:\n\n⚔ Infantry — Reliable all-rounders. Your main fighting force.\n♞ Cavalry — Fast and mobile. Great for flanking and capturing undefended flags.\n☉ Cannons — Devastating firepower at range, but slow and vulnerable up close.',
-            icon: '⚔',
+            title: 'The Scoreboard',
+            body: 'Track each army\'s strength here. You can see total troops, flags held, and a breakdown by unit type: ⚔ Infantry, ♞ Cavalry, ☉ Cannons.',
+            target: 'scoreboard',
+            position: 'right',
           },
           {
-            title: 'Selecting Units',
-            body: 'Left-click a unit to select it. You can also click and drag a box to select multiple units at once. Selected units glow gold.',
-            icon: '👆',
+            title: 'Choose Your Battlefield',
+            body: 'Pick from three historic Civil War battlefields. Each has different terrain, starting positions, and tactical challenges.',
+            target: 'battle-selector',
+            position: 'right',
           },
           {
-            title: 'Moving Troops',
-            body: 'With units selected, click and drag to draw a movement path. Your troops will follow the path you draw. Use roads for a 40% speed boost!',
-            icon: '🗺️',
+            title: 'The Battlefield',
+            body: 'This is the battlefield map. Your blue units and flags are on one side, the enemy\'s red units on the other. Colored terrain zones show forests, roads, rivers, and more.',
+            target: 'map-area',
+            position: 'left',
           },
           {
-            title: 'Combat',
-            body: 'Units automatically fire at enemies within range when standing still. Flanking the enemy from the side or rear deals extra damage. Cannons are deadly against stationary targets but struggle to hit moving ones.',
-            icon: '💥',
+            title: 'Map Controls',
+            body: 'Zoom in/out, toggle pan mode (or hold Space), and toggle the tactical terrain overlay with these buttons.',
+            target: 'map-controls',
+            position: 'left',
           },
           {
-            title: 'Morale & Routing',
-            body: 'Units under fire lose morale and darken. If morale drops too low, they break and flee to the nearest friendly flag. Keep your Commander nearby — he boosts morale of surrounding troops.',
-            icon: '📯',
+            title: 'Select Your Units',
+            body: 'Left-click a unit to select it (it glows gold). Or click and drag a box over multiple units to select them all at once.',
+            target: 'map-area',
+            position: 'left',
           },
           {
-            title: 'Capture the Flag',
-            body: 'Move any unit onto an enemy flag to capture it instantly. Capturing a flag boosts the morale of your entire army and crushes the enemy\'s. Capture all flags to win!',
-            icon: '🚩',
+            title: 'Move Your Troops',
+            body: 'With units selected, click and drag on the map to draw a movement path. Troops will follow the line you draw. Use roads for 40% faster movement!',
+            target: 'controls-hint',
+            position: 'right',
           },
           {
-            title: 'Terrain Matters',
-            body: 'Forests provide defensive cover. Rivers are impassable — only creeks can be crossed (slowly). Toggle the tactical overlay (eye icon) to see terrain zones.',
-            icon: '🌲',
+            title: 'Combat & Flanking',
+            body: 'Units fire automatically when stationary and in range. Attack enemies from the side or rear for bonus damage. Cannons are devastating vs. stationary foes but weak against moving targets.',
+            target: 'map-area',
+            position: 'left',
           },
           {
-            title: 'Ready for Battle!',
-            body: 'Select your battlefield, then click Start Battle. Good luck, Commander!',
-            icon: '⭐',
+            title: 'Morale & Your Commander',
+            body: 'Units under fire lose morale and darken. If morale drops too low, they break and flee! Keep your Commander nearby — his aura boosts surrounding troops\' morale.',
+            target: 'map-area',
+            position: 'left',
+          },
+          {
+            title: 'Capture the Flag!',
+            body: 'Move any unit onto an enemy flag to capture it instantly. This boosts your entire army\'s morale and crushes the enemy\'s. Capture all flags to win!',
+            target: 'map-area',
+            position: 'left',
+          },
+          {
+            title: 'Start the Battle',
+            body: 'When you\'re ready, hit Start Battle. Good luck, Commander!',
+            target: 'start-btn',
+            position: 'right',
           },
         ];
         const step = steps[walkthroughStep - 1];
         const isLast = walkthroughStep === steps.length;
         const isFirst = walkthroughStep === 1;
+
+        // Find highlighted element position
+        const targetEl = step.target ? document.querySelector(`[data-wt="${step.target}"]`) : null;
+        const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+
+        // Spotlight cutout dimensions (with padding)
+        const pad = 8;
+        const spot = rect ? {
+          top: rect.top - pad,
+          left: rect.left - pad,
+          width: rect.width + pad * 2,
+          height: rect.height + pad * 2,
+        } : null;
+
+        // Tooltip position relative to highlighted element
+        let tooltipStyle = {};
+        if (rect && step.position === 'right') {
+          tooltipStyle = {
+            position: 'fixed',
+            top: Math.max(20, Math.min(rect.top, window.innerHeight - 320)),
+            left: rect.right + 20,
+            maxWidth: Math.min(360, window.innerWidth - rect.right - 40),
+          };
+        } else if (rect && step.position === 'left') {
+          tooltipStyle = {
+            position: 'fixed',
+            top: Math.max(20, Math.min(rect.top, window.innerHeight - 320)),
+            right: window.innerWidth - rect.left + 20,
+            maxWidth: Math.min(360, rect.left - 40),
+          };
+        } else {
+          tooltipStyle = {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            maxWidth: 420,
+          };
+        }
+
         return (
           <div className="walkthrough-overlay" onClick={() => setWalkthroughStep(0)}>
-            <div className="walkthrough-card" onClick={e => e.stopPropagation()}>
+            {/* Spotlight mask */}
+            <svg className="walkthrough-mask" width="100%" height="100%">
+              <defs>
+                <mask id="wt-mask">
+                  <rect x="0" y="0" width="100%" height="100%" fill="white" />
+                  {spot && (
+                    <rect x={spot.left} y={spot.top} width={spot.width} height={spot.height}
+                      rx="8" fill="black" />
+                  )}
+                </mask>
+              </defs>
+              <rect x="0" y="0" width="100%" height="100%" fill="rgba(5,4,2,0.75)" mask="url(#wt-mask)" />
+            </svg>
+
+            {/* Spotlight border glow */}
+            {spot && (
+              <div className="walkthrough-spotlight" style={{
+                position: 'fixed', top: spot.top, left: spot.left,
+                width: spot.width, height: spot.height,
+              }} />
+            )}
+
+            {/* Tooltip card */}
+            <div className="walkthrough-card" style={tooltipStyle} onClick={e => e.stopPropagation()}>
               <button className="rules-close" onClick={() => setWalkthroughStep(0)}>✕</button>
               <div className="walkthrough-progress">
                 {steps.map((_, i) => (
                   <div key={i} className={`walkthrough-dot ${i < walkthroughStep ? 'active' : ''} ${i === walkthroughStep - 1 ? 'current' : ''}`} />
                 ))}
               </div>
-              <div className="walkthrough-icon">{step.icon}</div>
               <h2 className="walkthrough-title">{step.title}</h2>
-              <div className="walkthrough-body">{step.body.split('\n').map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}</div>
+              <div className="walkthrough-body">
+                {step.body.split('\n').map((line, i) => <p key={i}>{line}</p>)}
+              </div>
               <div className="walkthrough-nav">
                 {!isFirst && (
                   <button className="walkthrough-prev" onClick={() => setWalkthroughStep(s => s - 1)}>← Back</button>
                 )}
                 {isLast ? (
-                  <button className="walkthrough-next walkthrough-finish" onClick={() => setWalkthroughStep(0)}>Got it!</button>
+                  <button className="walkthrough-next walkthrough-finish" onClick={() => setWalkthroughStep(0)}>Start Playing!</button>
                 ) : (
                   <button className="walkthrough-next" onClick={() => setWalkthroughStep(s => s + 1)}>Next →</button>
                 )}
