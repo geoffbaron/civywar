@@ -32,38 +32,38 @@ export const BATTLEFIELDS = {
     // Represented as Union ~530 troops vs Confederate ~310 (CSA on strong defense)
     units: [
       // UNION — 7 infantry brigades, east of Antietam Creek
-      { owner: 1, lat: 39.4840, lng: -77.7310, count: 70, unitType: 'infantry' }, // Hooker advance
-      { owner: 1, lat: 39.4815, lng: -77.7280, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4790, lng: -77.7260, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4758, lng: -77.7240, count: 70, unitType: 'infantry' }, // Sumner center
-      { owner: 1, lat: 39.4730, lng: -77.7225, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4620, lng: -77.7220, count: 60, unitType: 'infantry' }, // Burnside south
-      { owner: 1, lat: 39.4580, lng: -77.7210, count: 55, unitType: 'infantry' },
+      { owner: 1, lat: 39.4840, lng: -77.7240, count: 70, unitType: 'infantry' }, // Hooker advance
+      { owner: 1, lat: 39.4815, lng: -77.7210, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.4790, lng: -77.7190, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.4758, lng: -77.7170, count: 70, unitType: 'infantry' }, // Sumner center
+      { owner: 1, lat: 39.4730, lng: -77.7155, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.4620, lng: -77.7150, count: 60, unitType: 'infantry' }, // Burnside south
+      { owner: 1, lat: 39.4580, lng: -77.7140, count: 55, unitType: 'infantry' },
       // Cavalry — on far flanks
-      { owner: 1, lat: 39.4845, lng: -77.7220, count: 40, unitType: 'cavalry' },
-      { owner: 1, lat: 39.4565, lng: -77.7195, count: 40, unitType: 'cavalry' },
+      { owner: 1, lat: 39.4845, lng: -77.7150, count: 40, unitType: 'cavalry' },
+      { owner: 1, lat: 39.4565, lng: -77.7125, count: 40, unitType: 'cavalry' },
       // Artillery — well behind the infantry line
-      { owner: 1, lat: 39.4810, lng: -77.7200, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.4740, lng: -77.7190, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.4640, lng: -77.7195, count: 24, unitType: 'cannon' },
+      { owner: 1, lat: 39.4810, lng: -77.7130, count: 28, unitType: 'cannon' },
+      { owner: 1, lat: 39.4740, lng: -77.7120, count: 28, unitType: 'cannon' },
+      { owner: 1, lat: 39.4640, lng: -77.7125, count: 24, unitType: 'cannon' },
       // Commander — far rear
-      { owner: 1, lat: 39.4770, lng: -77.7180, count: 10, unitType: 'commander' },
+      { owner: 1, lat: 39.4770, lng: -77.7110, count: 10, unitType: 'commander' },
 
       // CONFEDERATE — west of creek, around Sharpsburg
-      { owner: 2, lat: 39.4830, lng: -77.7540, count: 55, unitType: 'infantry' }, // Jackson north
-      { owner: 2, lat: 39.4805, lng: -77.7520, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.4762, lng: -77.7500, count: 60, unitType: 'infantry' }, // Sunken Road
-      { owner: 2, lat: 39.4738, lng: -77.7490, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.4625, lng: -77.7510, count: 45, unitType: 'infantry' }, // Toombs bridge
-      { owner: 2, lat: 39.4590, lng: -77.7540, count: 40, unitType: 'infantry' },
+      { owner: 2, lat: 39.4830, lng: -77.7610, count: 55, unitType: 'infantry' }, // Jackson north
+      { owner: 2, lat: 39.4805, lng: -77.7590, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 39.4762, lng: -77.7570, count: 60, unitType: 'infantry' }, // Sunken Road
+      { owner: 2, lat: 39.4738, lng: -77.7560, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 39.4625, lng: -77.7580, count: 45, unitType: 'infantry' }, // Toombs bridge
+      { owner: 2, lat: 39.4590, lng: -77.7610, count: 40, unitType: 'infantry' },
       // Cavalry
-      { owner: 2, lat: 39.4840, lng: -77.7610, count: 28, unitType: 'cavalry' },
-      { owner: 2, lat: 39.4570, lng: -77.7620, count: 28, unitType: 'cavalry' },
+      { owner: 2, lat: 39.4840, lng: -77.7680, count: 28, unitType: 'cavalry' },
+      { owner: 2, lat: 39.4570, lng: -77.7690, count: 28, unitType: 'cavalry' },
       // Artillery — behind the line
-      { owner: 2, lat: 39.4820, lng: -77.7600, count: 20, unitType: 'cannon' },
-      { owner: 2, lat: 39.4745, lng: -77.7580, count: 22, unitType: 'cannon' },
+      { owner: 2, lat: 39.4820, lng: -77.7670, count: 20, unitType: 'cannon' },
+      { owner: 2, lat: 39.4745, lng: -77.7650, count: 22, unitType: 'cannon' },
       // Commander
-      { owner: 2, lat: 39.4715, lng: -77.7590, count: 10, unitType: 'commander' },
+      { owner: 2, lat: 39.4715, lng: -77.7660, count: 10, unitType: 'commander' },
     ],
   },
 
@@ -88,27 +88,27 @@ export const BATTLEFIELDS = {
     // Historical: Union ~94k vs Confederate ~71k (1.32:1)
     units: [
       // Union — Cemetery Ridge defensive line, east side
-      { owner: 1, lat: 39.8185, lng: -77.2240, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8145, lng: -77.2210, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8105, lng: -77.2190, count: 70, unitType: 'infantry' },
-      { owner: 1, lat: 39.8055, lng: -77.2175, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8005, lng: -77.2190, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 39.8215, lng: -77.2180, count: 38, unitType: 'cavalry' },
-      { owner: 1, lat: 39.7965, lng: -77.2160, count: 38, unitType: 'cavalry' },
-      { owner: 1, lat: 39.8125, lng: -77.2155, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.8025, lng: -77.2160, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.8085, lng: -77.2140, count: 10, unitType: 'commander' },
+      { owner: 1, lat: 39.8185, lng: -77.2170, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.8145, lng: -77.2140, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.8105, lng: -77.2120, count: 70, unitType: 'infantry' },
+      { owner: 1, lat: 39.8055, lng: -77.2105, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 39.8005, lng: -77.2120, count: 60, unitType: 'infantry' },
+      { owner: 1, lat: 39.8215, lng: -77.2110, count: 38, unitType: 'cavalry' },
+      { owner: 1, lat: 39.7965, lng: -77.2090, count: 38, unitType: 'cavalry' },
+      { owner: 1, lat: 39.8125, lng: -77.2085, count: 28, unitType: 'cannon' },
+      { owner: 1, lat: 39.8025, lng: -77.2090, count: 28, unitType: 'cannon' },
+      { owner: 1, lat: 39.8085, lng: -77.2070, count: 10, unitType: 'commander' },
       // Confederate — Seminary Ridge, west side
-      { owner: 2, lat: 39.8185, lng: -77.2480, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.8135, lng: -77.2470, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.8085, lng: -77.2480, count: 65, unitType: 'infantry' },
-      { owner: 2, lat: 39.8035, lng: -77.2490, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.7985, lng: -77.2500, count: 50, unitType: 'infantry' },
-      { owner: 2, lat: 39.8215, lng: -77.2530, count: 30, unitType: 'cavalry' },
-      { owner: 2, lat: 39.7965, lng: -77.2540, count: 30, unitType: 'cavalry' },
-      { owner: 2, lat: 39.8105, lng: -77.2520, count: 22, unitType: 'cannon' },
-      { owner: 2, lat: 39.8005, lng: -77.2530, count: 22, unitType: 'cannon' },
-      { owner: 2, lat: 39.8085, lng: -77.2540, count: 10, unitType: 'commander' },
+      { owner: 2, lat: 39.8185, lng: -77.2550, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 39.8135, lng: -77.2540, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 39.8085, lng: -77.2550, count: 65, unitType: 'infantry' },
+      { owner: 2, lat: 39.8035, lng: -77.2560, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 39.7985, lng: -77.2570, count: 50, unitType: 'infantry' },
+      { owner: 2, lat: 39.8215, lng: -77.2600, count: 30, unitType: 'cavalry' },
+      { owner: 2, lat: 39.7965, lng: -77.2610, count: 30, unitType: 'cavalry' },
+      { owner: 2, lat: 39.8105, lng: -77.2590, count: 22, unitType: 'cannon' },
+      { owner: 2, lat: 39.8005, lng: -77.2600, count: 22, unitType: 'cannon' },
+      { owner: 2, lat: 39.8085, lng: -77.2610, count: 10, unitType: 'commander' },
     ],
   },
 
@@ -134,29 +134,29 @@ export const BATTLEFIELDS = {
     // Union has numerical advantage; CSA has quality/initiative edge (reflected by terrain)
     units: [
       // Union — Chancellorsville crossroads, west side
-      { owner: 1, lat: 38.3180, lng: -77.6500, count: 70, unitType: 'infantry' },
-      { owner: 1, lat: 38.3155, lng: -77.6470, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 38.3130, lng: -77.6420, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 38.3100, lng: -77.6380, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 38.3040, lng: -77.6370, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 38.3195, lng: -77.6570, count: 55, unitType: 'infantry' }, // Sickles flank
-      { owner: 1, lat: 38.3200, lng: -77.6610, count: 50, unitType: 'infantry' }, // Howard's XI Corps
-      { owner: 1, lat: 38.3190, lng: -77.6560, count: 35, unitType: 'cavalry' },
-      { owner: 1, lat: 38.3010, lng: -77.6340, count: 35, unitType: 'cavalry' },
-      { owner: 1, lat: 38.3145, lng: -77.6450, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 38.3060, lng: -77.6360, count: 25, unitType: 'cannon' },
-      { owner: 1, lat: 38.3110, lng: -77.6410, count: 10, unitType: 'commander' },
+      { owner: 1, lat: 38.3180, lng: -77.6570, count: 70, unitType: 'infantry' },
+      { owner: 1, lat: 38.3155, lng: -77.6540, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 38.3130, lng: -77.6490, count: 65, unitType: 'infantry' },
+      { owner: 1, lat: 38.3100, lng: -77.6450, count: 60, unitType: 'infantry' },
+      { owner: 1, lat: 38.3040, lng: -77.6440, count: 60, unitType: 'infantry' },
+      { owner: 1, lat: 38.3195, lng: -77.6640, count: 55, unitType: 'infantry' }, // Sickles flank
+      { owner: 1, lat: 38.3200, lng: -77.6680, count: 50, unitType: 'infantry' }, // Howard's XI Corps
+      { owner: 1, lat: 38.3190, lng: -77.6630, count: 35, unitType: 'cavalry' },
+      { owner: 1, lat: 38.3010, lng: -77.6410, count: 35, unitType: 'cavalry' },
+      { owner: 1, lat: 38.3145, lng: -77.6520, count: 28, unitType: 'cannon' },
+      { owner: 1, lat: 38.3060, lng: -77.6430, count: 25, unitType: 'cannon' },
+      { owner: 1, lat: 38.3110, lng: -77.6480, count: 10, unitType: 'commander' },
       // Confederate — far fewer, east side
-      { owner: 2, lat: 38.3140, lng: -77.6150, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 38.3110, lng: -77.6170, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 38.3070, lng: -77.6220, count: 60, unitType: 'infantry' }, // Jackson flanking
-      { owner: 2, lat: 38.3030, lng: -77.6260, count: 50, unitType: 'infantry' },
-      { owner: 2, lat: 38.2970, lng: -77.6290, count: 45, unitType: 'infantry' },
-      { owner: 2, lat: 38.3155, lng: -77.6100, count: 32, unitType: 'cavalry' }, // Stuart's cavalry
-      { owner: 2, lat: 38.2955, lng: -77.6310, count: 28, unitType: 'cavalry' },
-      { owner: 2, lat: 38.3090, lng: -77.6130, count: 22, unitType: 'cannon' },
-      { owner: 2, lat: 38.3000, lng: -77.6240, count: 20, unitType: 'cannon' },
-      { owner: 2, lat: 38.3050, lng: -77.6220, count: 10, unitType: 'commander' },
+      { owner: 2, lat: 38.3140, lng: -77.6080, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 38.3110, lng: -77.6100, count: 55, unitType: 'infantry' },
+      { owner: 2, lat: 38.3070, lng: -77.6150, count: 60, unitType: 'infantry' }, // Jackson flanking
+      { owner: 2, lat: 38.3030, lng: -77.6190, count: 50, unitType: 'infantry' },
+      { owner: 2, lat: 38.2970, lng: -77.6220, count: 45, unitType: 'infantry' },
+      { owner: 2, lat: 38.3155, lng: -77.6030, count: 32, unitType: 'cavalry' }, // Stuart's cavalry
+      { owner: 2, lat: 38.2955, lng: -77.6240, count: 28, unitType: 'cavalry' },
+      { owner: 2, lat: 38.3090, lng: -77.6060, count: 22, unitType: 'cannon' },
+      { owner: 2, lat: 38.3000, lng: -77.6170, count: 20, unitType: 'cannon' },
+      { owner: 2, lat: 38.3050, lng: -77.6150, count: 10, unitType: 'commander' },
     ],
   },
 };
