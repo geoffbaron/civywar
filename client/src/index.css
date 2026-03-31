@@ -1,0 +1,493 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background-color: #1a2010;
+  user-select: none;
+}
+
+.app-wrapper {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #1a2010;
+}
+
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  background: #25211d;
+  border-right: 3px solid #3c3123;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  color: #dfcdb8;
+  z-index: 50;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+  font-family: 'Georgia', serif;
+}
+
+.sidebar-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+.sidebar-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 6px;
+  color: #fff;
+  font-family: 'Cinzel', 'Georgia', serif;
+  text-shadow: 1px 1px 4px #000;
+  white-space: nowrap;
+}
+
+.sidebar-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+.score-box {
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.score-box h3 { margin: 0 0 6px 0; font-size: 14px; letter-spacing: 2px; font-weight: bold; }
+.score-box.union h3 { color: #6699dd; }
+.score-box.confed h3 { color: #ee5555; }
+.score-total { font-size: 28px; font-weight: bold; color: #fff; margin-bottom: 4px; }
+.score-details { font-size: 12px; color: #aaa; line-height: 1.6; }
+.score-vs { text-align: center; font-style: italic; color: #777; font-size: 14px; opacity: 0.5; }
+
+.sidebar-deploy h3 { text-align: center; font-size: 14px; color: #ccc; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
+.unit-selector-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.unit-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 16px;
+  gap: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.3);
+  color: #aaa;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.unit-btn:hover {
+  background: rgba(0,0,0,0.6);
+  border-color: rgba(255,255,255,0.4);
+  color: #eee;
+}
+.unit-btn.active {
+  border-color: #ffd700;
+  color: #ffd700;
+  background: rgba(60,50,20,0.6);
+  box-shadow: 0 0 10px rgba(255,215,0,0.15);
+}
+.unit-btn-icon { font-size: 20px; }
+.unit-btn-label { font-size: 12px; }
+
+.hint-text {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  margin-top: 12px;
+  line-height: 1.4;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  font-size: 11px;
+  color: #666;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 16px;
+  line-height: 1.6;
+}
+.sidebar-footer p { margin: 4px 0; }
+.sidebar-footer strong { color: #999; }
+
+.mute-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 5px;
+  background: rgba(0,0,0,0.3);
+  color: #aaa;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.mute-btn:hover {
+  background: rgba(0,0,0,0.5);
+  color: #ddd;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.map-ctrl-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  background: rgba(40,40,40,0.8);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: all 0.1s;
+}
+.map-ctrl-btn:hover {
+  background: rgba(60,60,60,0.9);
+  border-color: rgba(255,255,255,0.5);
+}
+.map-ctrl-btn:active {
+  background: rgba(80,80,80,1);
+  transform: scale(0.95);
+}
+
+
+.game-container {
+  flex: 1;
+  position: relative;
+  background: #1a2010;
+  overflow: hidden;
+}
+
+/* Leaflet map background */
+.map-background {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+}
+.map-background .leaflet-container {
+  background: #2a2a1a;
+}
+
+/* SVG game overlay — sits on top of the Leaflet map */
+.game-svg-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: all;
+}
+
+/* Sidebar controls */
+.sidebar-section {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-label {
+  display: block;
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  font-family: 'Georgia', serif;
+}
+.sidebar-select {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.4);
+  color: #ddd;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  font-family: 'Georgia', serif;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+.sidebar-select:hover {
+  border-color: rgba(255,255,255,0.3);
+}
+.sidebar-select option {
+  background: #1a1a14;
+  color: #ddd;
+}
+.battle-info {
+  font-size: 10px;
+  color: #777;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* ─── Victory ─── */
+.victory-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.victory-box {
+  background: rgba(20,18,15,0.95);
+  border: 2px solid #ffd700;
+  border-radius: 10px;
+  padding: 32px 52px;
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 0 35px rgba(255,215,0,0.25);
+}
+.victory-box h2 {
+  font-size: 2.2rem;
+  margin: 0 0 8px;
+  font-family: 'Cinzel', 'Georgia', serif;
+  letter-spacing: 3px;
+  color: #ffd700;
+}
+.victory-box p {
+  font-size: 1rem;
+  margin: 0 0 18px;
+  font-style: italic;
+  opacity: 0.8;
+}
+.restart-btn {
+  padding: 9px 26px;
+  font-size: 0.95rem;
+  font-family: 'Georgia', serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: rgba(255,215,0,0.12);
+  color: #ffd700;
+  border: 2px solid #ffd700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.restart-btn:hover {
+  background: rgba(255,215,0,0.28);
+}
+
+/* ─── Rules Modal ─── */
+.rules-toggle {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  margin-left: 10px;
+  cursor: pointer;
+  vertical-align: middle;
+  pointer-events: auto;
+}
+.rules-toggle:hover {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.rules-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  font-family: 'Georgia', serif;
+}
+
+.rules-modal {
+  background: #332d26;
+  border: 2px solid #a69176;
+  border-radius: 8px;
+  padding: 24px 32px;
+  color: #dfcdb8;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  position: relative;
+  animation: fadein 0.2s ease-out;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rules-modal h2 {
+  margin-top: 0;
+  color: #fff;
+  font-size: 22px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 12px;
+}
+
+.rules-content h3 {
+  color: #f0dea5;
+  font-size: 16px;
+  margin: 16px 0 8px 0;
+}
+
+.rules-content p, .rules-content ul {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #cccccc;
+  margin: 0 0 10px 0;
+}
+
+.rules-content p {
+  padding-left: 0;
+}
+
+.rules-content ul {
+  padding-left: 20px;
+}
+
+.rules-content li {
+  margin-bottom: 6px;
+}
+
+.rules-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  background: none; border: none;
+  color: #aaa; font-size: 20px;
+  cursor: pointer;
+}
+.rules-close:hover {
+  color: white;
+}
+
+/* ─── Combat Animations ─── */
+@keyframes trace {
+  to { stroke-dashoffset: -90; }
+}
+.combat-streak {
+  animation: trace 0.15s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes smoke-fade {
+  0% { r: 2px; opacity: 0.8; }
+  100% { r: 12px; opacity: 0; }
+}
+.smoke-puff {
+  animation: smoke-fade 1.5s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Terrain Tooltips ─── */
+.terrain-tooltip {
+  background: rgba(20, 18, 14, 0.92) !important;
+  border: 1px solid rgba(180, 160, 120, 0.5) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-family: 'Georgia', serif !important;
+  font-size: 12px !important;
+  color: #e8dcc8 !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.5) !important;
+  line-height: 1.5 !important;
+}
+.terrain-tooltip::before {
+  border-top-color: rgba(20, 18, 14, 0.92) !important;
+}
+.terrain-tip-icon {
+  font-size: 14px;
+  vertical-align: middle;
+}
+.terrain-tip-type {
+  color: #a09080;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Start / End Game Buttons ─── */
+.game-start-btn, .game-end-btn {
+  padding: 8px 20px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: bold;
+}
+.game-start-btn {
+  background: rgba(40, 120, 40, 0.25);
+  color: #66cc66;
+  border: 2px solid #66cc66;
+}
+.game-start-btn:hover {
+  background: rgba(40, 120, 40, 0.45);
+  color: #88ee88;
+  border-color: #88ee88;
+}
+.game-end-btn {
+  background: rgba(140, 40, 40, 0.2);
+  color: #cc6666;
+  border: 2px solid #cc6666;
+}
+.game-end-btn:hover {
+  background: rgba(140, 40, 40, 0.4);
+  color: #ee8888;
+  border-color: #ee8888;
+}
+
+/* ─── Pre-game Overlay ─── */
+.pregame-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 6, 4, 0.55);
+  pointer-events: all;
+}
+.pregame-box {
+  text-align: center;
+  pointer-events: all;
+}
+.pregame-box h2 {
+  font-family: 'Cinzel', 'Georgia', serif;
+  color: #ffd700;
+  font-size: 1.8rem;
+  letter-spacing: 3px;
+  margin: 0 0 6px;
+  text-shadow: 1px 1px 6px #000;
+}
+.pregame-box p {
+  color: #bbb;
+  font-style: italic;
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+.pregame-box .game-start-btn {
+  font-size: 16px;
+  padding: 12px 36px;
+  letter-spacing: 3px;
+}
