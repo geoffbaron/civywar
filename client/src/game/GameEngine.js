@@ -229,11 +229,14 @@ export class GameEngine {
   getEffectiveRange(group) {
     const base = this.getRange(group.unitType);
     const terrain = this.getTerrainAt(group.x, group.y);
-    // Hills and open ground extend range; forests severely restrict it
+    // Hills and open ground extend range; forests severely restrict it; low areas reduce it
     const mult = terrain.label === 'High Ground' ? 1.35
       : terrain.label === 'Open Field' ? 1.12
       : terrain.label === 'Woods' || terrain.label === 'Forest' ? 0.3
-      : terrain.label === 'Creek' || terrain.label === 'River' ? 0.8
+      : terrain.label === 'Building' ? 0.4
+      : terrain.label === 'Marsh' ? 0.6
+      : terrain.label === 'Creek' || terrain.label === 'River' ? 0.7
+      : terrain.label === 'Sunken Road' ? 0.65
       : 1.0;
     return base * mult;
   }
@@ -243,17 +246,33 @@ export class GameEngine {
     const friendly = this.groups.filter(g => g.owner === owner && g.count > 0);
     const enemies  = this.groups.filter(g => g.owner !== owner && g.count > 0);
     for (const e of enemies) {
+      // Firing units reveal themselves regardless of fog
+      if (e.fireTimer > 0) {
+        e.visible = true;
+        continue;
+      }
+      if (e.visible) continue; // Already visible from other owner's calculation
       e.visible = friendly.some(f => {
         let sight = this.getSightRange(f.unitType);
         
-        // Terrain visibility modifiers
+        // Terrain visibility modifiers for the OBSERVER
         const fTerrain = this.getTerrainAt(f.x, f.y);
-        const eTerrain = this.getTerrainAt(e.x, e.y);
-        
-        // Cannot see far out of woods
+        // High ground gives significant visibility boost
+        if (fTerrain.label === 'High Ground') sight *= 1.5;
+        // Cannot see far out of woods/buildings
         if (fTerrain.label === 'Woods') sight *= 0.4;
-        // Targets hiding in woods are harder to spot
+        if (fTerrain.label === 'Building') sight *= 0.5;
+        // Low areas reduce visibility
+        if (fTerrain.label === 'Marsh') sight *= 0.6;
+        if (fTerrain.label === 'Creek' || fTerrain.label === 'Sunken Road') sight *= 0.65;
+
+        // Terrain visibility modifiers for the TARGET
+        const eTerrain = this.getTerrainAt(e.x, e.y);
+        // Targets hiding in woods/buildings are harder to spot
         if (eTerrain.label === 'Woods') sight *= 0.5;
+        if (eTerrain.label === 'Building') sight *= 0.6;
+        // Targets in low areas are harder to see
+        if (eTerrain.label === 'Marsh' || eTerrain.label === 'Sunken Road') sight *= 0.7;
 
         return Math.hypot(f.x - e.x, f.y - e.y) < sight;
       });

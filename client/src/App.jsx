@@ -593,13 +593,22 @@ function App() {
         {(() => {
           const fg = gameState.groups.filter(g => g.owner === 1 && g.count > 0);
           if (!fg.length) return null;
+          // Compute terrain-adjusted sight radius for each unit
+          const sightRadii = fg.map(g => {
+            let sight = engine.getSightRange(g.unitType);
+            const t = engine.getTerrainAt(g.x, g.y);
+            if (t.label === 'High Ground') sight *= 1.5;
+            if (t.label === 'Woods') sight *= 0.4;
+            if (t.label === 'Building') sight *= 0.5;
+            if (t.label === 'Marsh') sight *= 0.6;
+            if (t.label === 'Creek' || t.label === 'Sunken Road') sight *= 0.65;
+            return sight * zoomScale;
+          });
           return (
             <>
               <defs>
-                {/* Gradient: BLACK solid at center fading to transparent at edge —
-                    used to punch clear sight holes in the white mask */}
-                {fg.map(g => {
-                  const r = engine.getSightRange(g.unitType) * zoomScale;
+                {fg.map((g, idx) => {
+                  const r = sightRadii[idx];
                   return (
                     <radialGradient key={`rg-${g.id}`} id={`rg-${g.id}`}
                       cx={g.x} cy={g.y} r={r} gradientUnits="userSpaceOnUse">
@@ -608,11 +617,10 @@ function App() {
                     </radialGradient>
                   );
                 })}
-                {/* Mask: WHITE base (fog everywhere), BLACK in sight circles (reveal there) */}
                 <mask id="fog-mask">
                   <rect x={-mapWidth} y={-mapHeight} width={mapWidth * 3} height={mapHeight * 3} fill="white" />
-                  {fg.map(g => {
-                    const r = engine.getSightRange(g.unitType) * zoomScale;
+                  {fg.map((g, idx) => {
+                    const r = sightRadii[idx];
                     return (
                       <ellipse key={`fm-${g.id}`}
                         cx={g.x} cy={g.y} rx={r} ry={r}
@@ -621,7 +629,6 @@ function App() {
                   })}
                 </mask>
               </defs>
-              {/* Dark fog overlay — only shows where mask is white (outside sight) */}
               <rect x={-mapWidth} y={-mapHeight} width={mapWidth * 3} height={mapHeight * 3}
                 fill="rgba(8,6,4,0.65)" mask="url(#fog-mask)"
                 pointerEvents="none" />
