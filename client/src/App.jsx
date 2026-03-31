@@ -1095,20 +1095,23 @@ function App() {
         } : null;
 
         // Tooltip position relative to highlighted element
+        const cardW = 340;
         let tooltipStyle = {};
         if (rect && step.position === 'right') {
+          // Place to the right of the element
+          const leftPos = rect.right + 16;
           tooltipStyle = {
             position: 'fixed',
-            top: Math.max(20, Math.min(rect.top, window.innerHeight - 320)),
-            left: rect.right + 20,
-            maxWidth: Math.min(360, window.innerWidth - rect.right - 40),
+            top: Math.max(20, Math.min(rect.top, window.innerHeight - 340)),
+            left: Math.min(leftPos, window.innerWidth - cardW - 20),
           };
         } else if (rect && step.position === 'left') {
+          // Place inside the left edge of a large element, or to its left if small
+          const isLarge = rect.width > 500;
           tooltipStyle = {
             position: 'fixed',
-            top: Math.max(20, Math.min(rect.top, window.innerHeight - 320)),
-            right: window.innerWidth - rect.left + 20,
-            maxWidth: Math.min(360, rect.left - 40),
+            top: Math.max(60, rect.top + 40),
+            left: isLarge ? rect.left + 40 : Math.max(20, rect.left - cardW - 16),
           };
         } else {
           tooltipStyle = {
@@ -1116,7 +1119,6 @@ function App() {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            maxWidth: 420,
           };
         }
 
