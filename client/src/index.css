@@ -423,6 +423,17 @@ body, html {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.tt-stats {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.tt-buff {
+  color: #8ddf6a;
+}
+.tt-nerf {
+  color: #ef8855;
+}
 
 /* ─── Start / End Game Buttons ─── */
 .game-start-btn, .game-end-btn {

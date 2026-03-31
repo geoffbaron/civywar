@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TILE_LAYERS } from './BattlefieldMaps';
+import { TERRAIN } from './MapData';
 
 export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyle = 'vintage', showTacticalOverlay = true, onMapReady, onMapMove }) {
   const containerRef = useRef(null);
@@ -84,9 +85,20 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
             ? feature.properties.label
             : s.label;
 
-          // Show a centered label for larger features
+          // Build bonus/minus lines from gameplay stats
+          const t = TERRAIN[type];
+          let statsHtml = '';
+          if (t) {
+            const lines = [];
+            if (t.speed !== 1.0) lines.push(`<span class="tt-${t.speed > 1 ? 'buff' : 'nerf'}">Speed ${t.speed > 1 ? '+' : ''}${Math.round((t.speed - 1) * 100)}%</span>`);
+            if (t.defense !== 1.0) lines.push(`<span class="tt-${t.defense > 1 ? 'buff' : 'nerf'}">Defense ${t.defense > 1 ? '+' : ''}${Math.round((t.defense - 1) * 100)}%</span>`);
+            if (t.offense !== 1.0) lines.push(`<span class="tt-${t.offense > 1 ? 'buff' : 'nerf'}">Offense ${t.offense > 1 ? '+' : ''}${Math.round((t.offense - 1) * 100)}%</span>`);
+            if (!t.passable) lines.push('<span class="tt-nerf">Impassable</span>');
+            if (lines.length) statsHtml = `<div class="tt-stats">${lines.join(' &middot; ')}</div>`;
+          }
+
           layer.bindTooltip(
-            `<span class="terrain-tip-icon">${s.icon}</span> <b>${displayLabel}</b><br/><span class="terrain-tip-type">${s.label}</span>`,
+            `<span class="terrain-tip-icon">${s.icon}</span> <b>${displayLabel}</b>${statsHtml}`,
             {
               className: 'terrain-tooltip',
               permanent: false,
