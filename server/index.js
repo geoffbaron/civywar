@@ -39,7 +39,7 @@ io.on('connection', (socket) => {
 });
 
 // SPA fallback — serve index.html for any non-file route
-app.get('*', (req, res) => {
+app.get('{*path}', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
