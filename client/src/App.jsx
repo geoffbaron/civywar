@@ -338,8 +338,40 @@ function App() {
         setDragState(prev => prev ? { ...prev, mouseX: pos.x, mouseY: pos.y } : null);
       }
     }
-    // On real maps, no terrain hover needed
-    if (hoverInfo !== null) setHoverInfo(null);
+    // Terrain hover when tactical overlay is visible and not dragging
+    if (showTacticalOverlay && !dragState && pixelToLatLngRef.current && transformedGeoTerrain) {
+      const loc = pixelToLatLngRef.current(pos.x, pos.y);
+      if (loc) {
+        let found = null;
+        for (const feature of transformedGeoTerrain.features) {
+          const geom = feature.geometry;
+          let rings = [];
+          if (geom.type === 'Polygon') rings = [geom.coordinates[0]];
+          else if (geom.type === 'MultiPolygon') rings = geom.coordinates.map(p => p[0]);
+          else continue;
+          for (const ring of rings) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+              const xi = ring[i][0], yi = ring[i][1];
+              const xj = ring[j][0], yj = ring[j][1];
+              if (((yi > loc.lat) !== (yj > loc.lat)) &&
+                  (loc.lng < (xj - xi) * (loc.lat - yi) / (yj - yi) + xi))
+                inside = !inside;
+            }
+            if (inside) { found = feature; break; }
+          }
+          if (found) break;
+        }
+        if (found) {
+          const t = TERRAIN[found.properties.type] || TERRAIN.grass;
+          setHoverInfo({ x: pos.x, y: pos.y, terrain: t, featureLabel: found.properties.label });
+        } else {
+          if (hoverInfo) setHoverInfo(null);
+        }
+      }
+    } else {
+      if (hoverInfo) setHoverInfo(null);
+    }
   };
 
   const onMouseUp = (e) => {
@@ -1001,17 +1033,39 @@ function App() {
         })}
 
         {/* Terrain tooltip */}
-        {hoverInfo && !dragState && (
-          <g pointerEvents="none">
-            <rect x={hoverInfo.x - 48} y={hoverInfo.y - 28} width={96} height={20}
-              rx={4} fill="rgba(0,0,0,0.8)" />
-            <text x={hoverInfo.x} y={hoverInfo.y - 15} textAnchor="middle" fill="#ddd"
-              fontSize="9.5" fontFamily="'Georgia', serif">
-              {hoverInfo.terrain.label}
-              {hoverInfo.terrain.speed > 0 ? ` · ${Math.round(hoverInfo.terrain.speed * 100)}% speed` : ' · Blocked'}
-            </text>
-          </g>
-        )}
+        {hoverInfo && !dragState && (() => {
+          const t = hoverInfo.terrain;
+          const name = hoverInfo.featureLabel || t.label;
+          const stats = [];
+          if (t.speed !== 1.0) stats.push({ label: 'Spd', val: t.speed, pct: Math.round((t.speed - 1) * 100) });
+          if (t.defense !== 1.0) stats.push({ label: 'Def', val: t.defense, pct: Math.round((t.defense - 1) * 100) });
+          if (t.offense !== 1.0) stats.push({ label: 'Atk', val: t.offense, pct: Math.round((t.offense - 1) * 100) });
+          if (!t.passable) stats.push({ label: 'Impassable', val: 0, pct: 0 });
+          const statLine = stats.map(s =>
+            s.label === 'Impassable' ? 'Impassable' : `${s.label} ${s.pct > 0 ? '+' : ''}${s.pct}%`
+          ).join('  ');
+          const boxW = Math.max(name.length * 6.5, statLine.length * 5.2, 80);
+          const boxH = stats.length ? 32 : 20;
+          return (
+            <g pointerEvents="none">
+              <rect x={hoverInfo.x - boxW / 2} y={hoverInfo.y - boxH - 10}
+                width={boxW} height={boxH} rx={4} fill="rgba(15,12,8,0.9)" stroke="rgba(180,160,120,0.4)" strokeWidth={0.8} />
+              <text x={hoverInfo.x} y={hoverInfo.y - boxH + 2} textAnchor="middle" fill="#e8dcc8"
+                fontSize="10" fontFamily="'Georgia', serif" fontWeight="bold">
+                {name}
+              </text>
+              {stats.length > 0 && (
+                <text x={hoverInfo.x} y={hoverInfo.y - boxH + 15} textAnchor="middle"
+                  fontSize="8.5" fontFamily="'Georgia', serif">
+                  {stats.map((s, i) => {
+                    const color = s.label === 'Impassable' ? '#ef8855' : (s.pct > 0 ? '#8ddf6a' : '#ef8855');
+                    return <tspan key={i} fill={color}>{i > 0 ? '  ' : ''}{s.label === 'Impassable' ? 'Impassable' : `${s.label} ${s.pct > 0 ? '+' : ''}${s.pct}%`}</tspan>;
+                  })}
+                </text>
+              )}
+            </g>
+          );
+        })()}
       </svg>
 
       {/* Walkthrough Tutorial */}
