@@ -29,39 +29,39 @@ export const BATTLEFIELDS = {
     ],
 
     // Historical: Union ~87k vs Confederate ~38k (2.3:1)
-    // Represented as Union ~530 troops vs Confederate ~310 (CSA on strong defense)
+    // Antietam was infantry-dominated. Cavalry played a minor role.
+    // Union had overwhelming numbers but attacked piecemeal.
+    // Confederate artillery was well-positioned on high ground.
     units: [
-      // UNION — 7 infantry brigades, east of Antietam Creek
-      { owner: 1, lat: 39.4840, lng: -77.7240, count: 70, unitType: 'infantry' }, // Hooker advance
-      { owner: 1, lat: 39.4815, lng: -77.7210, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4790, lng: -77.7190, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4758, lng: -77.7170, count: 70, unitType: 'infantry' }, // Sumner center
-      { owner: 1, lat: 39.4730, lng: -77.7155, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.4620, lng: -77.7150, count: 60, unitType: 'infantry' }, // Burnside south
-      { owner: 1, lat: 39.4580, lng: -77.7140, count: 55, unitType: 'infantry' },
-      // Cavalry — on far flanks
-      { owner: 1, lat: 39.4845, lng: -77.7150, count: 40, unitType: 'cavalry' },
-      { owner: 1, lat: 39.4565, lng: -77.7125, count: 40, unitType: 'cavalry' },
-      // Artillery — well behind the infantry line
-      { owner: 1, lat: 39.4810, lng: -77.7130, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.4740, lng: -77.7120, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.4640, lng: -77.7125, count: 24, unitType: 'cannon' },
-      // Commander — far rear
+      // UNION — massive infantry, minimal cavalry, strong artillery
+      { owner: 1, lat: 39.4840, lng: -77.7240, count: 75, unitType: 'infantry' }, // Hooker's I Corps
+      { owner: 1, lat: 39.4815, lng: -77.7210, count: 70, unitType: 'infantry' }, // Mansfield XII Corps
+      { owner: 1, lat: 39.4790, lng: -77.7190, count: 70, unitType: 'infantry' }, // Sumner II Corps
+      { owner: 1, lat: 39.4758, lng: -77.7170, count: 65, unitType: 'infantry' }, // Richardson div
+      { owner: 1, lat: 39.4730, lng: -77.7155, count: 65, unitType: 'infantry' }, // French div
+      { owner: 1, lat: 39.4620, lng: -77.7150, count: 60, unitType: 'infantry' }, // Burnside IX Corps
+      { owner: 1, lat: 39.4580, lng: -77.7140, count: 55, unitType: 'infantry' }, // Rodman div
+      // Cavalry — very small presence at Antietam
+      { owner: 1, lat: 39.4845, lng: -77.7150, count: 25, unitType: 'cavalry' }, // Pleasonton (screening)
+      // Artillery — 3 batteries, well-supplied
+      { owner: 1, lat: 39.4810, lng: -77.7130, count: 30, unitType: 'cannon' },
+      { owner: 1, lat: 39.4740, lng: -77.7120, count: 30, unitType: 'cannon' },
+      { owner: 1, lat: 39.4640, lng: -77.7125, count: 25, unitType: 'cannon' },
+      // Commander
       { owner: 1, lat: 39.4770, lng: -77.7110, count: 10, unitType: 'commander' },
 
-      // CONFEDERATE — west of creek, around Sharpsburg
-      { owner: 2, lat: 39.4830, lng: -77.7610, count: 55, unitType: 'infantry' }, // Jackson north
-      { owner: 2, lat: 39.4805, lng: -77.7590, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.4762, lng: -77.7570, count: 60, unitType: 'infantry' }, // Sunken Road
-      { owner: 2, lat: 39.4738, lng: -77.7560, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.4625, lng: -77.7580, count: 45, unitType: 'infantry' }, // Toombs bridge
-      { owner: 2, lat: 39.4590, lng: -77.7610, count: 40, unitType: 'infantry' },
-      // Cavalry
-      { owner: 2, lat: 39.4840, lng: -77.7680, count: 28, unitType: 'cavalry' },
-      { owner: 2, lat: 39.4570, lng: -77.7690, count: 28, unitType: 'cavalry' },
-      // Artillery — behind the line
-      { owner: 2, lat: 39.4820, lng: -77.7670, count: 20, unitType: 'cannon' },
-      { owner: 2, lat: 39.4745, lng: -77.7650, count: 22, unitType: 'cannon' },
+      // CONFEDERATE — outnumbered but dug in, excellent artillery placement
+      { owner: 2, lat: 39.4830, lng: -77.7610, count: 55, unitType: 'infantry' }, // Jackson's wing
+      { owner: 2, lat: 39.4805, lng: -77.7590, count: 50, unitType: 'infantry' }, // Hood
+      { owner: 2, lat: 39.4762, lng: -77.7570, count: 55, unitType: 'infantry' }, // D.H. Hill (Sunken Road)
+      { owner: 2, lat: 39.4738, lng: -77.7560, count: 50, unitType: 'infantry' }, // R.H. Anderson
+      { owner: 2, lat: 39.4625, lng: -77.7580, count: 40, unitType: 'infantry' }, // Toombs (bridge defense)
+      { owner: 2, lat: 39.4590, lng: -77.7610, count: 35, unitType: 'infantry' }, // A.P. Hill (reserve)
+      // Cavalry — Stuart screening, small force
+      { owner: 2, lat: 39.4840, lng: -77.7680, count: 20, unitType: 'cavalry' },
+      // Artillery — well-placed on high ground
+      { owner: 2, lat: 39.4820, lng: -77.7670, count: 22, unitType: 'cannon' }, // Nicodemus Heights
+      { owner: 2, lat: 39.4745, lng: -77.7650, count: 20, unitType: 'cannon' },
       // Commander
       { owner: 2, lat: 39.4715, lng: -77.7660, count: 10, unitType: 'commander' },
     ],
@@ -86,28 +86,42 @@ export const BATTLEFIELDS = {
     ],
 
     // Historical: Union ~94k vs Confederate ~71k (1.32:1)
+    // Gettysburg was the most balanced fight. Both sides had large cavalry.
+    // Biggest artillery concentration of the war (170+ CSA guns before Pickett's Charge).
+    // Buford's cavalry was critical on Day 1. Stuart's cavalry arrived late.
     units: [
-      // Union — Cemetery Ridge defensive line, east side
-      { owner: 1, lat: 39.8185, lng: -77.2170, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8145, lng: -77.2140, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8105, lng: -77.2120, count: 70, unitType: 'infantry' },
-      { owner: 1, lat: 39.8055, lng: -77.2105, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 39.8005, lng: -77.2120, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 39.8215, lng: -77.2110, count: 38, unitType: 'cavalry' },
-      { owner: 1, lat: 39.7965, lng: -77.2090, count: 38, unitType: 'cavalry' },
-      { owner: 1, lat: 39.8125, lng: -77.2085, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 39.8025, lng: -77.2090, count: 28, unitType: 'cannon' },
+      // UNION — strong defensive line, large cavalry corps, massive artillery
+      { owner: 1, lat: 39.8185, lng: -77.2170, count: 60, unitType: 'infantry' }, // I Corps (Cemetery Hill)
+      { owner: 1, lat: 39.8145, lng: -77.2140, count: 65, unitType: 'infantry' }, // II Corps (Hancock)
+      { owner: 1, lat: 39.8105, lng: -77.2120, count: 65, unitType: 'infantry' }, // III Corps (Sickles)
+      { owner: 1, lat: 39.8055, lng: -77.2105, count: 60, unitType: 'infantry' }, // V Corps (Sykes)
+      { owner: 1, lat: 39.8005, lng: -77.2120, count: 55, unitType: 'infantry' }, // VI Corps (Sedgwick)
+      { owner: 1, lat: 39.7975, lng: -77.2135, count: 50, unitType: 'infantry' }, // XII Corps (Slocum)
+      // Cavalry — Buford's division, prominent role
+      { owner: 1, lat: 39.8215, lng: -77.2110, count: 40, unitType: 'cavalry' }, // Buford north
+      { owner: 1, lat: 39.7965, lng: -77.2090, count: 35, unitType: 'cavalry' }, // Kilpatrick south
+      // Artillery — huge concentration on Cemetery Ridge
+      { owner: 1, lat: 39.8160, lng: -77.2085, count: 30, unitType: 'cannon' }, // Cemetery Hill guns
+      { owner: 1, lat: 39.8085, lng: -77.2080, count: 32, unitType: 'cannon' }, // Hunt's reserve
+      { owner: 1, lat: 39.7995, lng: -77.2095, count: 28, unitType: 'cannon' }, // Little Round Top
+      // Commander
       { owner: 1, lat: 39.8085, lng: -77.2070, count: 10, unitType: 'commander' },
-      // Confederate — Seminary Ridge, west side
-      { owner: 2, lat: 39.8185, lng: -77.2550, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.8135, lng: -77.2540, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.8085, lng: -77.2550, count: 65, unitType: 'infantry' },
-      { owner: 2, lat: 39.8035, lng: -77.2560, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 39.7985, lng: -77.2570, count: 50, unitType: 'infantry' },
-      { owner: 2, lat: 39.8215, lng: -77.2600, count: 30, unitType: 'cavalry' },
-      { owner: 2, lat: 39.7965, lng: -77.2610, count: 30, unitType: 'cavalry' },
-      { owner: 2, lat: 39.8105, lng: -77.2590, count: 22, unitType: 'cannon' },
-      { owner: 2, lat: 39.8005, lng: -77.2600, count: 22, unitType: 'cannon' },
+
+      // CONFEDERATE — nearly matched, aggressive, massive artillery
+      { owner: 2, lat: 39.8195, lng: -77.2550, count: 55, unitType: 'infantry' }, // Ewell's Corps (north)
+      { owner: 2, lat: 39.8155, lng: -77.2540, count: 55, unitType: 'infantry' }, // Early's division
+      { owner: 2, lat: 39.8105, lng: -77.2550, count: 60, unitType: 'infantry' }, // A.P. Hill's Corps (center)
+      { owner: 2, lat: 39.8055, lng: -77.2560, count: 60, unitType: 'infantry' }, // Heth/Pender
+      { owner: 2, lat: 39.8005, lng: -77.2570, count: 55, unitType: 'infantry' }, // Longstreet's Corps
+      { owner: 2, lat: 39.7965, lng: -77.2580, count: 50, unitType: 'infantry' }, // Hood/McLaws
+      // Cavalry — Stuart's cavalry (arrived late Day 2)
+      { owner: 2, lat: 39.8225, lng: -77.2600, count: 35, unitType: 'cavalry' }, // Stuart
+      { owner: 2, lat: 39.7945, lng: -77.2610, count: 30, unitType: 'cavalry' }, // Hampton
+      // Artillery — massive bombardment capability
+      { owner: 2, lat: 39.8145, lng: -77.2590, count: 28, unitType: 'cannon' }, // Seminary Ridge batteries
+      { owner: 2, lat: 39.8065, lng: -77.2595, count: 30, unitType: 'cannon' }, // Alexander's battalion
+      { owner: 2, lat: 39.7985, lng: -77.2600, count: 25, unitType: 'cannon' }, // Longstreet's guns
+      // Commander
       { owner: 2, lat: 39.8085, lng: -77.2610, count: 10, unitType: 'commander' },
     ],
   },
@@ -130,32 +144,42 @@ export const BATTLEFIELDS = {
       { id: 'c3', lat: 38.2960, lng: -77.6250, owner: 2, garrison: 25, rate: 1.8, label: 'Anderson' },
     ],
 
-    // Historical: Union ~133k vs Confederate ~60k (2.2:1) but Lee/Jackson outmaneuvered them
-    // Union has numerical advantage; CSA has quality/initiative edge (reflected by terrain)
+    // Historical: Union ~133k vs Confederate ~60k (2.2:1)
+    // Chancellorsville was fought in dense Wilderness — artillery was largely ineffective.
+    // Stoneman's raid took most Union cavalry away from the battle.
+    // Stuart's cavalry screened Jackson's famous flank march.
+    // Lee split his outnumbered force twice — ultimate gamble.
     units: [
-      // Union — Chancellorsville crossroads, west side
-      { owner: 1, lat: 38.3180, lng: -77.6570, count: 70, unitType: 'infantry' },
-      { owner: 1, lat: 38.3155, lng: -77.6540, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 38.3130, lng: -77.6490, count: 65, unitType: 'infantry' },
-      { owner: 1, lat: 38.3100, lng: -77.6450, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 38.3040, lng: -77.6440, count: 60, unitType: 'infantry' },
-      { owner: 1, lat: 38.3195, lng: -77.6640, count: 55, unitType: 'infantry' }, // Sickles flank
-      { owner: 1, lat: 38.3200, lng: -77.6680, count: 50, unitType: 'infantry' }, // Howard's XI Corps
-      { owner: 1, lat: 38.3190, lng: -77.6630, count: 35, unitType: 'cavalry' },
-      { owner: 1, lat: 38.3010, lng: -77.6410, count: 35, unitType: 'cavalry' },
-      { owner: 1, lat: 38.3145, lng: -77.6520, count: 28, unitType: 'cannon' },
-      { owner: 1, lat: 38.3060, lng: -77.6430, count: 25, unitType: 'cannon' },
+      // UNION — huge infantry mass, almost no cavalry, limited artillery effectiveness
+      { owner: 1, lat: 38.3180, lng: -77.6570, count: 75, unitType: 'infantry' }, // Meade's V Corps
+      { owner: 1, lat: 38.3155, lng: -77.6540, count: 70, unitType: 'infantry' }, // Couch's II Corps
+      { owner: 1, lat: 38.3130, lng: -77.6490, count: 70, unitType: 'infantry' }, // Slocum XII Corps
+      { owner: 1, lat: 38.3100, lng: -77.6450, count: 65, unitType: 'infantry' }, // Sickles III Corps
+      { owner: 1, lat: 38.3040, lng: -77.6440, count: 65, unitType: 'infantry' }, // Sedgwick VI Corps
+      { owner: 1, lat: 38.3195, lng: -77.6640, count: 60, unitType: 'infantry' }, // Reynolds I Corps
+      { owner: 1, lat: 38.3200, lng: -77.6680, count: 55, unitType: 'infantry' }, // Howard XI Corps (exposed flank)
+      { owner: 1, lat: 38.3170, lng: -77.6700, count: 50, unitType: 'infantry' }, // XI Corps reserve
+      // Cavalry — almost none (Stoneman's entire corps was on a raid)
+      { owner: 1, lat: 38.3010, lng: -77.6410, count: 20, unitType: 'cavalry' }, // Small screening force
+      // Artillery — limited by dense Wilderness, fewer guns useful
+      { owner: 1, lat: 38.3145, lng: -77.6520, count: 22, unitType: 'cannon' },
+      { owner: 1, lat: 38.3060, lng: -77.6430, count: 18, unitType: 'cannon' },
+      // Commander
       { owner: 1, lat: 38.3110, lng: -77.6480, count: 10, unitType: 'commander' },
-      // Confederate — far fewer, east side
-      { owner: 2, lat: 38.3140, lng: -77.6080, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 38.3110, lng: -77.6100, count: 55, unitType: 'infantry' },
-      { owner: 2, lat: 38.3070, lng: -77.6150, count: 60, unitType: 'infantry' }, // Jackson flanking
-      { owner: 2, lat: 38.3030, lng: -77.6190, count: 50, unitType: 'infantry' },
-      { owner: 2, lat: 38.2970, lng: -77.6220, count: 45, unitType: 'infantry' },
-      { owner: 2, lat: 38.3155, lng: -77.6030, count: 32, unitType: 'cavalry' }, // Stuart's cavalry
-      { owner: 2, lat: 38.2955, lng: -77.6240, count: 28, unitType: 'cavalry' },
-      { owner: 2, lat: 38.3090, lng: -77.6060, count: 22, unitType: 'cannon' },
-      { owner: 2, lat: 38.3000, lng: -77.6170, count: 20, unitType: 'cannon' },
+
+      // CONFEDERATE — smaller but aggressive, cavalry prominent, light artillery
+      { owner: 2, lat: 38.3140, lng: -77.6080, count: 50, unitType: 'infantry' }, // Jackson's Corps
+      { owner: 2, lat: 38.3110, lng: -77.6100, count: 50, unitType: 'infantry' }, // Rodes division
+      { owner: 2, lat: 38.3070, lng: -77.6150, count: 55, unitType: 'infantry' }, // Colston division
+      { owner: 2, lat: 38.3030, lng: -77.6190, count: 45, unitType: 'infantry' }, // A.P. Hill (reserve)
+      { owner: 2, lat: 38.2970, lng: -77.6220, count: 40, unitType: 'infantry' }, // Anderson division
+      // Cavalry — Stuart very active, screened Jackson's march
+      { owner: 2, lat: 38.3155, lng: -77.6030, count: 35, unitType: 'cavalry' }, // Stuart's cavalry
+      { owner: 2, lat: 38.2955, lng: -77.6240, count: 30, unitType: 'cavalry' }, // Fitz Lee
+      // Artillery — limited by terrain
+      { owner: 2, lat: 38.3090, lng: -77.6060, count: 18, unitType: 'cannon' },
+      { owner: 2, lat: 38.3000, lng: -77.6170, count: 15, unitType: 'cannon' },
+      // Commander
       { owner: 2, lat: 38.3050, lng: -77.6150, count: 10, unitType: 'commander' },
     ],
   },
