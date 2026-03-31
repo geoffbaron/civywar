@@ -38,6 +38,7 @@ function App() {
   // Dev tool to visually align GeoJSON traces with base map
   const [terrainOffset, setTerrainOffset] = useState({ lat: 0, lng: 0, scaleLat: 1.0, scaleLng: 1.0 });
   const [showTraceTool, setShowTraceTool] = useState(false);
+  const [walkthroughStep, setWalkthroughStep] = useState(0); // 0 = not showing
 
   const requestRef = useRef();
   const svgRef = useRef();
@@ -496,7 +497,10 @@ function App() {
         {/* Start / End Game */}
         <div className="sidebar-section" style={{ textAlign: 'center' }}>
           {!gameStarted ? (
-            <button className="game-start-btn" onClick={startGame}>Start Battle</button>
+            <>
+              <button className="game-start-btn" onClick={startGame}>Start Battle</button>
+              <button className="walkthrough-btn" onClick={() => setWalkthroughStep(1)}>How to Play</button>
+            </>
           ) : (
             <button className="game-end-btn" onClick={endGame}>End Battle</button>
           )}
@@ -1002,6 +1006,88 @@ function App() {
           </g>
         )}
       </svg>
+
+      {/* Walkthrough Tutorial */}
+      {walkthroughStep > 0 && (() => {
+        const steps = [
+          {
+            title: 'Welcome, Commander',
+            body: 'You command the Union army (blue) against the Confederate forces (red). Your goal: capture all enemy flags or destroy their army.',
+            icon: '🏛️',
+          },
+          {
+            title: 'Your Troops',
+            body: 'You have three unit types:\n\n⚔ Infantry — Reliable all-rounders. Your main fighting force.\n♞ Cavalry — Fast and mobile. Great for flanking and capturing undefended flags.\n☉ Cannons — Devastating firepower at range, but slow and vulnerable up close.',
+            icon: '⚔',
+          },
+          {
+            title: 'Selecting Units',
+            body: 'Left-click a unit to select it. You can also click and drag a box to select multiple units at once. Selected units glow gold.',
+            icon: '👆',
+          },
+          {
+            title: 'Moving Troops',
+            body: 'With units selected, click and drag to draw a movement path. Your troops will follow the path you draw. Use roads for a 40% speed boost!',
+            icon: '🗺️',
+          },
+          {
+            title: 'Combat',
+            body: 'Units automatically fire at enemies within range when standing still. Flanking the enemy from the side or rear deals extra damage. Cannons are deadly against stationary targets but struggle to hit moving ones.',
+            icon: '💥',
+          },
+          {
+            title: 'Morale & Routing',
+            body: 'Units under fire lose morale and darken. If morale drops too low, they break and flee to the nearest friendly flag. Keep your Commander nearby — he boosts morale of surrounding troops.',
+            icon: '📯',
+          },
+          {
+            title: 'Capture the Flag',
+            body: 'Move any unit onto an enemy flag to capture it instantly. Capturing a flag boosts the morale of your entire army and crushes the enemy\'s. Capture all flags to win!',
+            icon: '🚩',
+          },
+          {
+            title: 'Terrain Matters',
+            body: 'Forests provide defensive cover. Rivers are impassable — only creeks can be crossed (slowly). Toggle the tactical overlay (eye icon) to see terrain zones.',
+            icon: '🌲',
+          },
+          {
+            title: 'Ready for Battle!',
+            body: 'Select your battlefield, then click Start Battle. Good luck, Commander!',
+            icon: '⭐',
+          },
+        ];
+        const step = steps[walkthroughStep - 1];
+        const isLast = walkthroughStep === steps.length;
+        const isFirst = walkthroughStep === 1;
+        return (
+          <div className="walkthrough-overlay" onClick={() => setWalkthroughStep(0)}>
+            <div className="walkthrough-card" onClick={e => e.stopPropagation()}>
+              <button className="rules-close" onClick={() => setWalkthroughStep(0)}>✕</button>
+              <div className="walkthrough-progress">
+                {steps.map((_, i) => (
+                  <div key={i} className={`walkthrough-dot ${i < walkthroughStep ? 'active' : ''} ${i === walkthroughStep - 1 ? 'current' : ''}`} />
+                ))}
+              </div>
+              <div className="walkthrough-icon">{step.icon}</div>
+              <h2 className="walkthrough-title">{step.title}</h2>
+              <div className="walkthrough-body">{step.body.split('\n').map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}</div>
+              <div className="walkthrough-nav">
+                {!isFirst && (
+                  <button className="walkthrough-prev" onClick={() => setWalkthroughStep(s => s - 1)}>← Back</button>
+                )}
+                {isLast ? (
+                  <button className="walkthrough-next walkthrough-finish" onClick={() => setWalkthroughStep(0)}>Got it!</button>
+                ) : (
+                  <button className="walkthrough-next" onClick={() => setWalkthroughStep(s => s + 1)}>Next →</button>
+                )}
+              </div>
+              <div className="walkthrough-counter">{walkthroughStep} / {steps.length}</div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Rules Modal */}
       {showRules && (

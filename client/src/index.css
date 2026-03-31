@@ -491,3 +491,157 @@ body, html {
   padding: 12px 36px;
   letter-spacing: 3px;
 }
+
+/* ─── How to Play Button ─── */
+.walkthrough-btn {
+  display: block;
+  margin: 8px auto 0;
+  padding: 6px 16px;
+  font-family: 'Georgia', serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(160, 140, 100, 0.15);
+  color: #b0a080;
+  border: 1px solid rgba(160, 140, 100, 0.4);
+}
+.walkthrough-btn:hover {
+  background: rgba(160, 140, 100, 0.3);
+  color: #d4c4a0;
+  border-color: #d4c4a0;
+}
+
+/* ─── Walkthrough Tutorial Overlay ─── */
+.walkthrough-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 4, 2, 0.7);
+  backdrop-filter: blur(2px);
+  animation: fadein 0.2s ease-out;
+}
+
+.walkthrough-card {
+  background: linear-gradient(165deg, #3a332a 0%, #2a2520 100%);
+  border: 2px solid #a69176;
+  border-radius: 12px;
+  padding: 32px 40px 24px;
+  color: #dfcdb8;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative;
+  animation: fadein 0.25s ease-out;
+  text-align: center;
+}
+
+.walkthrough-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.walkthrough-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: all 0.3s;
+}
+.walkthrough-dot.active {
+  background: rgba(200, 170, 100, 0.5);
+}
+.walkthrough-dot.current {
+  background: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+  transform: scale(1.2);
+}
+
+.walkthrough-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.walkthrough-title {
+  font-family: 'Cinzel', 'Georgia', serif;
+  color: #ffd700;
+  font-size: 22px;
+  letter-spacing: 2px;
+  margin: 0 0 16px;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+.walkthrough-body {
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #c8bca8;
+  margin-bottom: 24px;
+}
+.walkthrough-body p {
+  margin: 0 0 6px;
+}
+.walkthrough-body p:empty {
+  margin: 0;
+}
+
+.walkthrough-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.walkthrough-prev, .walkthrough-next {
+  padding: 8px 24px;
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: bold;
+}
+.walkthrough-prev {
+  background: rgba(255,255,255,0.05);
+  color: #998870;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.walkthrough-prev:hover {
+  background: rgba(255,255,255,0.1);
+  color: #c8b898;
+}
+.walkthrough-next {
+  background: rgba(40, 120, 40, 0.25);
+  color: #66cc66;
+  border: 2px solid #66cc66;
+}
+.walkthrough-next:hover {
+  background: rgba(40, 120, 40, 0.45);
+  color: #88ee88;
+  border-color: #88ee88;
+}
+.walkthrough-finish {
+  background: rgba(180, 150, 40, 0.25);
+  color: #ffd700;
+  border: 2px solid #ffd700;
+}
+.walkthrough-finish:hover {
+  background: rgba(180, 150, 40, 0.45);
+  color: #ffe740;
+  border-color: #ffe740;
+}
+
+.walkthrough-counter {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #665e50;
+  letter-spacing: 1px;
+}
