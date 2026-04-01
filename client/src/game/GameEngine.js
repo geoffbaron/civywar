@@ -469,7 +469,7 @@ export class GameEngine {
           (b.unitType !== 'cannon' ? !b.isMoving
             : (!b.isMoving && (this.time - (b.stopTime || 0) >= 3000)));
 
-        const typeMult = { infantry: 1.0, cavalry: 0.85, cannon: 1.8, commander: 0 };
+        const typeMult = { infantry: 1.0, cavalry: 0.85, cannon: 1.5, commander: 0 };
 
         // Cannons are much less effective against moving targets
         const cannonVsMoving = (attacker, target) =>
