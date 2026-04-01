@@ -734,11 +734,15 @@ function App() {
           if (pts.length < 2) return null;
           const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
           const color = 'rgba(58,123,213,0.15)';
-          // Compute arrowhead from last two points
+          // Compute arrowhead direction from a longer segment for stability
           const last = pts[pts.length - 1];
-          const prev = pts[pts.length - 2];
-          const dx = last.x - prev.x;
-          const dy = last.y - prev.y;
+          let dx = 0, dy = 0;
+          // Walk backwards from the end to find a point far enough away for a stable angle
+          for (let pi = pts.length - 2; pi >= 0; pi--) {
+            dx = last.x - pts[pi].x;
+            dy = last.y - pts[pi].y;
+            if (Math.hypot(dx, dy) > 5) break;
+          }
           const len = Math.hypot(dx, dy);
           if (len < 1) return (
             <path key={`order-${g.id}`} d={d}
@@ -773,11 +777,14 @@ function App() {
           const fillColor = isUnionDrag ? '#3a7bd5' : '#c0392b';
           const pts = dragState.points;
           const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-          // Compute arrowhead from last two points
+          // Compute arrowhead direction from a longer segment for stability
           const last = pts[pts.length - 1];
-          const prev = pts[pts.length - 2];
-          const dx = last.x - prev.x;
-          const dy = last.y - prev.y;
+          let dx = 0, dy = 0;
+          for (let pi = pts.length - 2; pi >= 0; pi--) {
+            dx = last.x - pts[pi].x;
+            dy = last.y - pts[pi].y;
+            if (Math.hypot(dx, dy) > 5) break;
+          }
           const len = Math.hypot(dx, dy);
           const ux = len > 0 ? dx / len : 1, uy = len > 0 ? dy / len : 0;
           const aw = Math.max(4, 7 * zoomScale);
