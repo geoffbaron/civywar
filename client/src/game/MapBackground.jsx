@@ -46,7 +46,7 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
     // Terrain type → display config
     // Colors matched to Stamen Watercolor tile palette so overlays blend naturally
     const TERRAIN_STYLES = {
-      forest:      { color: '#8a9a70', fill: '#98aa80', opacity: 0.25, weight: 0,   icon: '🌲', label: 'Woods' },
+      forest:      { color: '#8a9a70', fill: '#98aa80', opacity: 0,    weight: 0,   icon: '🌲', label: 'Woods' },
       hill:        { color: '#b8a070', fill: '#c8b080', opacity: 0.28, weight: 0.8, icon: '⛰', label: 'High Ground' },
       sunken_road: { color: '#a09060', fill: '#b8a878', opacity: 0.25, weight: 0.5, icon: '🛤', label: 'Sunken Road' },
       river:       { color: '#80b8b0', fill: '#90c8c0', opacity: 0.35, weight: 0,   icon: '🌊', label: 'River' },
