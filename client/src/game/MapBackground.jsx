@@ -4,57 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import { TILE_LAYERS } from './BattlefieldMaps';
 import { TERRAIN } from './MapData';
 
-// ─── SVG pattern definitions injected into Leaflet's SVG renderer ───
-function injectPatternsIntoMap(map) {
-  // Find Leaflet's SVG overlay pane
-  const svgEl = map.getPane('overlayPane')?.querySelector('svg');
-  if (!svgEl || svgEl.querySelector('#pat-forest')) return;
-  
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  defs.innerHTML = `
-    <!-- Forest: small tree-like canopy dots -->
-    <pattern id="pat-forest" width="12" height="12" patternUnits="userSpaceOnUse">
-      <rect width="12" height="12" fill="#5b7a3a"/>
-      <circle cx="3" cy="3" r="1.8" fill="#4a6830" opacity="0.7"/>
-      <circle cx="9" cy="9" r="2.0" fill="#3d5a28" opacity="0.6"/>
-      <circle cx="9" cy="3" r="1.2" fill="#527230" opacity="0.5"/>
-      <circle cx="3" cy="9" r="1.4" fill="#4a6830" opacity="0.5"/>
-    </pattern>
-    <!-- Hill: fine diagonal hachure lines -->
-    <pattern id="pat-hill" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
-      <rect width="6" height="6" fill="#c8b078"/>
-      <line x1="0" y1="0" x2="0" y2="6" stroke="#a08850" stroke-width="0.8" opacity="0.5"/>
-    </pattern>
-    <!-- Water (river): wavy horizontal lines -->
-    <pattern id="pat-river" width="16" height="8" patternUnits="userSpaceOnUse">
-      <rect width="16" height="8" fill="#6a9ec0"/>
-      <path d="M0,4 Q4,2 8,4 Q12,6 16,4" stroke="#5088aa" stroke-width="0.8" fill="none" opacity="0.6"/>
-    </pattern>
-    <!-- Creek: lighter wavy lines -->
-    <pattern id="pat-creek" width="12" height="6" patternUnits="userSpaceOnUse">
-      <rect width="12" height="6" fill="#7ab0c8"/>
-      <path d="M0,3 Q3,1.5 6,3 Q9,4.5 12,3" stroke="#6098b0" stroke-width="0.6" fill="none" opacity="0.5"/>
-    </pattern>
-    <!-- Marsh: horizontal dashes for wetland -->
-    <pattern id="pat-marsh" width="10" height="6" patternUnits="userSpaceOnUse">
-      <rect width="10" height="6" fill="#8aaa88"/>
-      <line x1="1" y1="2" x2="4" y2="2" stroke="#6a8a68" stroke-width="0.6" opacity="0.6"/>
-      <line x1="6" y1="5" x2="9" y2="5" stroke="#6a8a68" stroke-width="0.6" opacity="0.6"/>
-    </pattern>
-    <!-- Orchard: grid of small dots -->
-    <pattern id="pat-orchard" width="8" height="8" patternUnits="userSpaceOnUse">
-      <rect width="8" height="8" fill="#7a9a58"/>
-      <circle cx="4" cy="4" r="1.2" fill="#5a7a3a" opacity="0.6"/>
-    </pattern>
-    <!-- Wheat: fine horizontal lines -->
-    <pattern id="pat-wheat" width="8" height="4" patternUnits="userSpaceOnUse">
-      <rect width="8" height="4" fill="#d4c880"/>
-      <line x1="0" y1="2" x2="8" y2="2" stroke="#baa860" stroke-width="0.5" opacity="0.4"/>
-    </pattern>
-  `;
-  svgEl.insertBefore(defs, svgEl.firstChild);
-}
-
 export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyle = 'vintage', showTacticalOverlay = true, onMapReady, onMapMove }) {
   const containerRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
@@ -94,24 +43,24 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
       updateWhenIdle: true,
     }).addTo(map);
 
-    // Terrain type → display config
-    // Styled for clarity: terrain IS the primary visual. Players must see what affects them.
-    // Inspired by Civil War era hand-drawn military maps.
+    // ─── Terrain type → display config ───
+    // Bold, clear, saturated fills — terrain IS the primary visual.
+    // What you see is what affects gameplay. Each type has a distinct color.
     const TERRAIN_STYLES = {
-      forest:      { color: '#4a6830', fill: 'url(#pat-forest)', fillColor: '#5b7a3a', opacity: 0.85, weight: 1.2, icon: '🌲', label: 'Woods' },
-      hill:        { color: '#9a7a48', fill: 'url(#pat-hill)',   fillColor: '#c8b078', opacity: 0.7,  weight: 1.5, icon: '⛰', label: 'High Ground' },
-      sunken_road: { color: '#8a7040', fill: null,               fillColor: '#b8a060', opacity: 0.6,  weight: 2.0, icon: '🛤', label: 'Sunken Road' },
-      river:       { color: '#4878a0', fill: 'url(#pat-river)',  fillColor: '#6a9ec0', opacity: 0.8,  weight: 1.5, icon: '🌊', label: 'River' },
-      creek:       { color: '#5090a8', fill: 'url(#pat-creek)',  fillColor: '#7ab0c8', opacity: 0.75, weight: 1.0, icon: '💧', label: 'Creek' },
-      marsh:       { color: '#6a8a68', fill: 'url(#pat-marsh)',  fillColor: '#8aaa88', opacity: 0.6,  weight: 0.8, icon: '🏚', label: 'Marsh' },
-      wheat:       { color: '#b0a050', fill: 'url(#pat-wheat)',  fillColor: '#d4c880', opacity: 0.55, weight: 0.8, icon: '🌾', label: 'Wheat Field' },
-      orchard:     { color: '#5a7a3a', fill: 'url(#pat-orchard)',fillColor: '#7a9a58', opacity: 0.7,  weight: 1.0, icon: '🍎', label: 'Orchard' },
-      road:        { color: '#8a7858', fill: null,               fillColor: '#b8a078', opacity: 0.5,  weight: 2.0, icon: '🛣', label: 'Road' },
-      bridge:      { color: '#7a6840', fill: null,               fillColor: '#c0a868', opacity: 0.65, weight: 2.0, icon: '🌉', label: 'Bridge' },
-      building:    { color: '#6a5848', fill: null,               fillColor: '#8a7060', opacity: 0.75, weight: 1.5, icon: '🏠', label: 'Building' },
-      fence_stone: { color: '#706858', fill: null,               fillColor: '#908070', opacity: 0.5,  weight: 2.0, dash: '4,2', icon: '🧱', label: 'Stone Wall' },
-      fence_wood:  { color: '#8a7858', fill: null,               fillColor: '#a09070', opacity: 0.35, weight: 1.5, dash: '3,3', icon: '🪵', label: 'Fence' },
-      trench:      { color: '#6a5838', fill: null,               fillColor: '#907850', opacity: 0.55, weight: 1.5, icon: '⚒', label: 'Trench' },
+      forest:      { color: '#3a5a20', fillColor: '#4a7a2a', opacity: 0.70, weight: 1.5, icon: '🌲', label: 'Woods' },
+      hill:        { color: '#9a7a40', fillColor: '#c8a858', opacity: 0.60, weight: 1.8, icon: '⛰', label: 'High Ground' },
+      sunken_road: { color: '#8a6830', fillColor: '#b89050', opacity: 0.55, weight: 2.5, icon: '🛤', label: 'Sunken Road' },
+      river:       { color: '#2868a0', fillColor: '#4088c0', opacity: 0.75, weight: 2.0, icon: '🌊', label: 'River' },
+      creek:       { color: '#3878a8', fillColor: '#58a0c8', opacity: 0.65, weight: 1.5, icon: '💧', label: 'Creek' },
+      marsh:       { color: '#508868', fillColor: '#70a888', opacity: 0.50, weight: 1.0, icon: '🏚', label: 'Marsh' },
+      wheat:       { color: '#b8a040', fillColor: '#d8c860', opacity: 0.50, weight: 1.0, icon: '🌾', label: 'Wheat Field' },
+      orchard:     { color: '#4a7830', fillColor: '#6a9848', opacity: 0.60, weight: 1.2, icon: '🍎', label: 'Orchard' },
+      road:        { color: '#7a6840', fillColor: '#a89060', opacity: 0.45, weight: 2.5, icon: '🛣', label: 'Road' },
+      bridge:      { color: '#6a5830', fillColor: '#a08848', opacity: 0.60, weight: 2.5, icon: '🌉', label: 'Bridge' },
+      building:    { color: '#5a4030', fillColor: '#7a5840', opacity: 0.75, weight: 2.0, icon: '🏠', label: 'Building' },
+      fence_stone: { color: '#605848', fillColor: '#807060', opacity: 0.45, weight: 2.5, dash: '5,3', icon: '🧱', label: 'Stone Wall' },
+      fence_wood:  { color: '#8a7848', fillColor: '#a89868', opacity: 0.35, weight: 2.0, dash: '4,4', icon: '🪵', label: 'Fence' },
+      trench:      { color: '#5a4828', fillColor: '#806838', opacity: 0.50, weight: 2.0, icon: '⚒', label: 'Trench' },
     };
 
     // Initialize an empty tactical terrain overlay layer
@@ -131,17 +80,6 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
           const type = feature.properties.type;
           const s = TERRAIN_STYLES[type];
           if (!s) return;
-
-          // Apply SVG pattern fill directly on the path element after it renders
-          if (s.fill) {
-            layer.on('add', () => {
-              const el = layer.getElement && layer.getElement();
-              if (el) {
-                el.setAttribute('fill', s.fill);
-                el.style.fillOpacity = s.opacity;
-              }
-            });
-          }
 
           // Persistent label on the polygon (not just tooltip)
           const name = feature.properties.label || s.label;
@@ -176,8 +114,6 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
       
       if (showTacticalOverlay) {
         geoJsonLayerRef.current.addTo(map);
-        // Inject SVG pattern defs into Leaflet's SVG renderer
-        injectPatternsIntoMap(map);
       }
 
     setMapInstance(map);
@@ -247,7 +183,6 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
     if (showTacticalOverlay) {
       if (!mapInstance.hasLayer(geoJsonLayerRef.current)) {
         geoJsonLayerRef.current.addTo(mapInstance);
-        injectPatternsIntoMap(mapInstance);
       }
     } else {
       if (mapInstance.hasLayer(geoJsonLayerRef.current)) {
