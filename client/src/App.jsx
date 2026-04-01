@@ -794,7 +794,7 @@ function App() {
                 fill={fillColor} />
             </g>
           );
-        })()}}
+        })()}
 
         {/* Selection Box */}
         {dragState?.type === 'box' && (
