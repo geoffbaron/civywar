@@ -616,11 +616,11 @@ function App() {
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           {/* Arrowhead markers for PBS-style movement arrows — scale with zoom */}
-          <marker id="arrow-union" markerWidth={Math.max(3, 6 * zoomScale)} markerHeight={Math.max(3, 6 * zoomScale)} refX={Math.max(2.5, 5 * zoomScale)} refY={Math.max(1.5, 3 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
-            <path d={`M0,0 L0,${Math.max(3, 6 * zoomScale)} L${Math.max(3, 6 * zoomScale)},${Math.max(1.5, 3 * zoomScale)} z`} fill="#3a7bd5" />
+          <marker id="arrow-union" markerWidth={Math.max(6, 12 * zoomScale)} markerHeight={Math.max(6, 12 * zoomScale)} refX={Math.max(5, 10 * zoomScale)} refY={Math.max(3, 6 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
+            <path d={`M0,0 L0,${Math.max(6, 12 * zoomScale)} L${Math.max(6, 12 * zoomScale)},${Math.max(3, 6 * zoomScale)} z`} fill="#3a7bd5" />
           </marker>
-          <marker id="arrow-confed" markerWidth={Math.max(3, 6 * zoomScale)} markerHeight={Math.max(3, 6 * zoomScale)} refX={Math.max(2.5, 5 * zoomScale)} refY={Math.max(1.5, 3 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
-            <path d={`M0,0 L0,${Math.max(3, 6 * zoomScale)} L${Math.max(3, 6 * zoomScale)},${Math.max(1.5, 3 * zoomScale)} z`} fill="#c0392b" />
+          <marker id="arrow-confed" markerWidth={Math.max(6, 12 * zoomScale)} markerHeight={Math.max(6, 12 * zoomScale)} refX={Math.max(5, 10 * zoomScale)} refY={Math.max(3, 6 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
+            <path d={`M0,0 L0,${Math.max(6, 12 * zoomScale)} L${Math.max(6, 12 * zoomScale)},${Math.max(3, 6 * zoomScale)} z`} fill="#c0392b" />
           </marker>
         </defs>
 
