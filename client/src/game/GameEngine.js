@@ -475,6 +475,10 @@ export class GameEngine {
         const cannonVsMoving = (attacker, target) =>
           (attacker.unitType === 'cannon' && target.isMoving) ? 0.2 : 1.0;
 
+        // Cannon accuracy drops off at longer ranges (1.0 at close, 0.3 at max range)
+        const cannonRangeFalloff = (attacker, range) =>
+          attacker.unitType === 'cannon' ? Math.max(0.3, 1.0 - 0.7 * (dist / range)) : 1.0;
+
         // Also require enemy to be visible (within sight range of any friendly)
         const aCanSee = this.groups.filter(f => f.owner === a.owner)
           .some(f => Math.hypot(f.x - b.x, f.y - b.y) < this.getSightRange(f.unitType));
@@ -489,7 +493,7 @@ export class GameEngine {
 
         if (aCanFire && aCanSee && dist < aRange) {
           const defB = aIgnoresWoodsDef ? 1.0 : bTerrain.defense;
-          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b);
+          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b) * cannonRangeFalloff(a, aRange);
           b.count -= aDps * dt;
           b.morale -= 3 * dt;  // b is under fire
           a.isEngaged = true;
@@ -502,7 +506,7 @@ export class GameEngine {
         }
         if (bCanFire && bCanSee && dist < bRange) {
           const defA = bIgnoresWoodsDef ? 1.0 : aTerrain.defense;
-          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a);
+          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a) * cannonRangeFalloff(b, bRange);
           a.count -= bDps * dt;
           a.morale -= 3 * dt;  // a is under fire
           b.isEngaged = true;
