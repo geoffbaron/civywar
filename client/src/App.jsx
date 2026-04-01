@@ -292,7 +292,7 @@ function App() {
       engine.selectedGroupIds.add(clickedGroup.id);
       
       // Immediately start drawing a path
-      setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos] });
+      setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos], lastPointTime: performance.now() });
       return;
     }
 
@@ -303,7 +303,7 @@ function App() {
         const dist = Math.hypot(pos.x - g.x, pos.y - g.y);
         // Fixed selection ring radius instead of weapon range which was too large
         if (dist <= 45) {
-          setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos] });
+          setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos], lastPointTime: performance.now() });
           return;
         }
       }
@@ -331,9 +331,15 @@ function App() {
         setDragState(prev => {
           if (!prev) return null;
           const last = prev.points[prev.points.length - 1];
-          // Smoother path rendering (higher minimum threshold creates straight, deliberate movement lines)
-          if (Math.hypot(pos.x - last.x, pos.y - last.y) > 40) {
-            return { ...prev, points: [...prev.points, pos] };
+          const dist = Math.hypot(pos.x - last.x, pos.y - last.y);
+          // Adaptive threshold: slow drawing captures more points for precision
+          const now = performance.now();
+          const elapsed = now - (prev.lastPointTime || now);
+          const speed = elapsed > 0 ? dist / elapsed : 999; // px/ms
+          // Slow movement (<0.3 px/ms) → threshold 8px; fast movement → up to 40px
+          const threshold = Math.max(8, Math.min(40, speed * 80));
+          if (dist > threshold) {
+            return { ...prev, points: [...prev.points, pos], lastPointTime: now };
           }
           return prev;
         });
