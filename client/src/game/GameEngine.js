@@ -710,7 +710,8 @@ export class GameEngine {
   }
 
   orderPath(groupIds, pathPoints) {
-    groupIds.forEach(id => {
+    const count = groupIds.length;
+    groupIds.forEach((id, idx) => {
       const g = this.groups.find(gr => gr.id === id);
       if (g) {
          // Drop leading waypoints that are near the unit (avoids backward movement)
@@ -720,10 +721,11 @@ export class GameEngine {
            startIdx++;
          }
          const trimmed = pathPoints.slice(startIdx);
-         // Create a noisy clone of the path to avoid pure grouping overlap
+         // Slight spread for multi-unit selections so they don't stack perfectly
+         const spread = count > 1 ? 6 : 0;
          g.path = trimmed.map(p => {
-           const px = p.x + (Math.random() * 20 - 10);
-           const py = p.y + (Math.random() * 20 - 10);
+           const px = p.x + (Math.random() * spread * 2 - spread);
+           const py = p.y + (Math.random() * spread * 2 - spread);
            return this._wp(px, py);
          });
       }
