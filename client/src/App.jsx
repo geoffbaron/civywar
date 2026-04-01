@@ -29,7 +29,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [currentBattle, setCurrentBattle] = useState('antietam');
-  const [tileLayer, setTileLayer] = useState('historical');
+  const [tileLayer, setTileLayer] = useState('watercolor');
   const [mapStyle, setMapStyle] = useState('vintage');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
   const [mapWidth, setMapWidth] = useState(1200);
@@ -532,7 +532,6 @@ function App() {
             <option value="vintage">Vintage</option>
             <option value="warm">Warm</option>
             <option value="parchment">Parchment</option>
-            <option value="historical">Historical</option>
             <option value="dark">Dark</option>
             <option value="natural">Natural (no filter)</option>
           </select>

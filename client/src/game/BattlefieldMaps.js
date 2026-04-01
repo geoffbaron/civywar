@@ -247,12 +247,12 @@ export const BATTLEFIELDS = {
 
 // Tile layer options — user can switch between these
 export const TILE_LAYERS = {
-  // Historical — parchment background, no tiles (terrain overlay only)
-  historical: {
-    name: 'Historical',
-    url: null,
-    attribution: '',
-    maxZoom: 19,
+  // Stamen Watercolor via Stadia — hand-drawn parchment look
+  watercolor: {
+    name: 'Watercolor',
+    url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+    attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap',
+    maxZoom: 16,
   },
   // OpenTopoMap — free, no key, shows terrain contours
   topo: {
@@ -267,15 +267,6 @@ export const TILE_LAYERS = {
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '© OpenStreetMap',
     maxZoom: 19,
-  },
-  // Stamen Watercolor via Stadia — needs free API key
-  // Sign up at https://stadiamaps.com/ for a free key
-  watercolor: {
-    name: 'Watercolor',
-    url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
-    attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap',
-    maxZoom: 16,
-    needsKey: true,
   },
   // ESRI World Imagery — satellite
   satellite: {
