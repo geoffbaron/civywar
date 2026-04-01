@@ -328,7 +328,8 @@ export class GameEngine {
       const dy = target.y - g.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < 8) {
+      // Guard against NaN waypoints or zero distance
+      if (isNaN(dist) || dist < 8) {
         g.path.shift();
         continue;
       }
@@ -377,6 +378,12 @@ export class GameEngine {
 
       g.x = Math.max(5, Math.min(this.mapWidth - 5, g.x));
       g.y = Math.max(5, Math.min(this.mapHeight - 5, g.y));
+      // Recover from NaN position (place near map center)
+      if (isNaN(g.x) || isNaN(g.y)) {
+        g.x = this.mapWidth / 2;
+        g.y = this.mapHeight / 2;
+        g.path = [];
+      }
     }
 
     // Soft Collision / Separation (prevent overlapping / passing through)
@@ -551,6 +558,8 @@ export class GameEngine {
     // NOTE: this must run BEFORE filter, so shockwave sees dead units
     for (let i = this.groups.length - 1; i >= 0; i--) {
       const dead = this.groups[i];
+      // Guard against NaN count (treat as dead)
+      if (isNaN(dead.count)) dead.count = 0;
       if (dead.count <= 0) {
         if (dead.unitType === 'commander') {
           for (const g of this.groups) {
