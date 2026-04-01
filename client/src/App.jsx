@@ -272,14 +272,16 @@ function App() {
     const pos = getSvgPos(e);
     if (!pos) return;
 
-    // Check if clicked directly on a player unit
+    // Check if clicked directly on a player unit — find closest within hit radius
     let clickedGroup = null;
+    let closestDist = Infinity;
+    const hitRadius = Math.max(15, 35 * zoomScale);
     for (const g of engine.groups) {
       if (g.owner === 1) {
         const dist = Math.hypot(pos.x - g.x, pos.y - g.y);
-        if (dist <= 35) { // Generous hit radius
+        if (dist <= hitRadius && dist < closestDist) {
+          closestDist = dist;
           clickedGroup = g;
-          break;
         }
       }
     }
@@ -302,7 +304,7 @@ function App() {
       if (g) {
         const dist = Math.hypot(pos.x - g.x, pos.y - g.y);
         // Fixed selection ring radius instead of weapon range which was too large
-        if (dist <= 45) {
+        if (dist <= Math.max(20, 45 * zoomScale)) {
           setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos], lastPointTime: performance.now() });
           return;
         }
@@ -837,7 +839,8 @@ function App() {
                 {/* Selection ring */}
                 {isSelected && (
                   <rect x={group.x - cw/2 - 4*zoomScale} y={group.y - ch/2 - 4*zoomScale} width={cw + 8*zoomScale} height={ch + 8*zoomScale}
-                    fill="none" stroke="#ffd700" strokeWidth={2} strokeDasharray="4 2" />
+                    fill="none" stroke="#ffd700" strokeWidth={2} strokeDasharray="4 2"
+                    transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} />
                 )}
                 {/* Gold cavalry bar — uses angleDeg to face enemies like other units */}
                 <rect x={group.x - cw/2} y={group.y - ch/2} width={cw} height={ch} rx={2}
@@ -891,7 +894,8 @@ function App() {
               {engine.selectedGroupIds.has(group.id) && (
                 <>
                   <rect x={group.x - sw / 2 - 4*zoomScale} y={group.y - sh / 2 - 4*zoomScale} width={sw + 8*zoomScale} height={sh + 8*zoomScale}
-                    fill="none" stroke="#ffd700" strokeWidth={2} strokeDasharray="4 2" />
+                    fill="none" stroke="#ffd700" strokeWidth={2} strokeDasharray="4 2"
+                    transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} />
                   <circle cx={group.x} cy={group.y} r={engine.getRange(group.unitType) * zoomScale} fill="rgba(0,0,0,0.04)" stroke="rgba(80,60,40,0.5)" strokeWidth={1.5} strokeDasharray="4 4" pointerEvents="none" />
                 </>
               )}
