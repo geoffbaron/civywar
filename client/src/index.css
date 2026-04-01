@@ -186,6 +186,18 @@ body, html {
   background: #2a2a1a;
 }
 
+/* Historical parchment map background */
+.map-parchment .leaflet-container {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(180,160,120,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(160,140,100,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(200,180,140,0.15) 0%, transparent 70%),
+    #dcc89a;
+}
+.map-parchment .leaflet-tile-pane {
+  display: none;
+}
+
 /* SVG game overlay — sits on top of the Leaflet map */
 .game-svg-overlay {
   position: absolute;

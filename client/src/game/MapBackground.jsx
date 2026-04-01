@@ -5,33 +5,48 @@ import { TILE_LAYERS } from './BattlefieldMaps';
 import { TERRAIN } from './MapData';
 
 // ─── Inject SVG pattern definitions into the Leaflet SVG renderer ───
-// These patterns emulate hand-drawn historical military map styling:
-// tree shapes for forests, hachure marks for hills, etc.
+// These patterns emulate hand-drawn historical military map styling —
+// rounded tree canopy blobs, organic hill shading, wavy marsh lines.
 function injectTerrainPatterns(svgEl) {
   if (svgEl.querySelector('.terrain-patterns')) return;
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   defs.setAttribute('class', 'terrain-patterns');
   defs.innerHTML = `
-    <pattern id="pat-forest" width="18" height="22" patternUnits="userSpaceOnUse">
-      <rect width="18" height="22" fill="#1a4a12" fill-opacity="0.22"/>
-      <polygon points="5,1 1,10 9,10" fill="#0e3508" fill-opacity="0.7"/>
-      <polygon points="5,3.5 2.5,10 7.5,10" fill="#16450e" fill-opacity="0.5"/>
-      <rect x="4" y="10" width="2" height="2.5" fill="#3a2008" fill-opacity="0.45"/>
-      <polygon points="14,7 10,16 18,16" fill="#0e3508" fill-opacity="0.6"/>
-      <polygon points="14,9.5 11.5,16 16.5,16" fill="#16450e" fill-opacity="0.4"/>
-      <rect x="13" y="16" width="2" height="2.5" fill="#3a2008" fill-opacity="0.4"/>
+    <pattern id="pat-forest" width="28" height="26" patternUnits="userSpaceOnUse">
+      <rect width="28" height="26" fill="#8a9a60" fill-opacity="0.25"/>
+      <!-- Rounded canopy blobs like hand-drawn period maps -->
+      <ellipse cx="7" cy="8" rx="6.5" ry="5.5" fill="#5a6a38" fill-opacity="0.6"/>
+      <ellipse cx="7" cy="8" rx="4" ry="3.5" fill="#6a7a44" fill-opacity="0.4"/>
+      <ellipse cx="6" cy="6" rx="2.5" ry="2" fill="#7a8a50" fill-opacity="0.3"/>
+      <ellipse cx="22" cy="17" rx="6" ry="5" fill="#4e5e30" fill-opacity="0.55"/>
+      <ellipse cx="22" cy="17" rx="3.5" ry="3" fill="#647842" fill-opacity="0.35"/>
+      <ellipse cx="21" cy="15.5" rx="2" ry="1.5" fill="#7a8a50" fill-opacity="0.25"/>
+      <!-- Shadow underneath canopies -->
+      <ellipse cx="7" cy="12" rx="5" ry="1.5" fill="#2a3a10" fill-opacity="0.2"/>
+      <ellipse cx="22" cy="21" rx="4.5" ry="1.5" fill="#2a3a10" fill-opacity="0.18"/>
     </pattern>
-    <pattern id="pat-hill" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(50)">
-      <rect width="8" height="8" fill="#c4a060" fill-opacity="0.15"/>
-      <line x1="0" y1="0" x2="0" y2="8" stroke="#7a5a28" stroke-width="1.5" stroke-opacity="0.4"/>
+    <pattern id="pat-hill" width="20" height="12" patternUnits="userSpaceOnUse">
+      <rect width="20" height="12" fill="#b09860" fill-opacity="0.12"/>
+      <!-- Organic hill shading — soft arcs like contour lines -->
+      <path d="M0,8 Q5,3 10,8 Q15,3 20,8" fill="none" stroke="#7a6030" stroke-width="0.8" stroke-opacity="0.3"/>
+      <path d="M3,11 Q8,6 13,11 Q18,6 23,11" fill="none" stroke="#7a6030" stroke-width="0.6" stroke-opacity="0.2"/>
+      <path d="M-2,4 Q3,0 8,4 Q13,-1 18,4" fill="none" stroke="#8a7040" stroke-width="0.5" stroke-opacity="0.15"/>
     </pattern>
-    <pattern id="pat-marsh" width="20" height="8" patternUnits="userSpaceOnUse">
-      <rect width="20" height="8" fill="#5a9ab0" fill-opacity="0.08"/>
-      <path d="M0,4 Q5,1 10,4 Q15,7 20,4" fill="none" stroke="#2a7080" stroke-width="1.2" stroke-opacity="0.4"/>
+    <pattern id="pat-marsh" width="24" height="10" patternUnits="userSpaceOnUse">
+      <rect width="24" height="10" fill="#7a9a80" fill-opacity="0.08"/>
+      <path d="M0,5 Q6,2 12,5 Q18,8 24,5" fill="none" stroke="#4a7a60" stroke-width="1" stroke-opacity="0.35"/>
+      <line x1="4" y1="7" x2="8" y2="7" stroke="#4a7a60" stroke-width="0.6" stroke-opacity="0.25"/>
+      <line x1="16" y1="3" x2="20" y2="3" stroke="#4a7a60" stroke-width="0.6" stroke-opacity="0.25"/>
     </pattern>
-    <pattern id="pat-orchard" width="14" height="14" patternUnits="userSpaceOnUse">
-      <rect width="14" height="14" fill="#4a7820" fill-opacity="0.1"/>
-      <circle cx="7" cy="7" r="3" fill="#3a6818" fill-opacity="0.45" stroke="#2a5010" stroke-width="0.5" stroke-opacity="0.3"/>
+    <pattern id="pat-orchard" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#8a9a58" fill-opacity="0.08"/>
+      <circle cx="8" cy="8" r="3.5" fill="#5a6a30" fill-opacity="0.4"/>
+      <circle cx="8" cy="7" r="2" fill="#6a7a3a" fill-opacity="0.25"/>
+    </pattern>
+    <pattern id="pat-wheat" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect width="12" height="12" fill="#c8b870" fill-opacity="0.15"/>
+      <line x1="3" y1="0" x2="3" y2="8" stroke="#a09040" stroke-width="0.5" stroke-opacity="0.2"/>
+      <line x1="9" y1="4" x2="9" y2="12" stroke="#a09040" stroke-width="0.5" stroke-opacity="0.2"/>
     </pattern>
   `;
   svgEl.prepend(defs);
@@ -43,6 +58,7 @@ const PATTERN_FILLS = {
   hill: 'pat-hill',
   marsh: 'pat-marsh',
   orchard: 'pat-orchard',
+  wheat: 'pat-wheat',
 };
 
 export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyle = 'vintage', showTacticalOverlay = true, onMapReady, onMapMove }) {
@@ -86,22 +102,22 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
       }).addTo(map);
     }
 
-    // Terrain type → display config (historical military map aesthetic)
+    // Terrain type → display config (historical hand-drawn military map aesthetic)
     const TERRAIN_STYLES = {
-      forest:      { color: '#1a4a10', fill: '#1a4a10', opacity: 0.35, weight: 1.5, icon: '🌲', label: 'Woods' },
-      hill:        { color: '#8a6a30', fill: '#c4a060', opacity: 0.3,  weight: 2,   dash: '5,3', icon: '⛰', label: 'High Ground' },
-      sunken_road: { color: '#6a4a0a', fill: '#b08a30', opacity: 0.5,  weight: 3,   icon: '🛤', label: 'Sunken Road' },
-      river:       { color: '#1a6a70', fill: '#2a8a88', opacity: 0.55, weight: 3,   icon: '🌊', label: 'River' },
-      creek:       { color: '#1a6a70', fill: '#3a9a90', opacity: 0.45, weight: 2.5, icon: '💧', label: 'Creek' },
-      marsh:       { color: '#2a7080', fill: '#4a99bb', opacity: 0.3,  weight: 1.5, icon: '🏚', label: 'Marsh' },
-      wheat:       { color: '#a08a20', fill: '#d8c040', opacity: 0.25, weight: 1,   dash: '3,2', icon: '🌾', label: 'Wheat Field' },
-      orchard:     { color: '#3a6a20', fill: '#5a8830', opacity: 0.3,  weight: 1.5, icon: '🍎', label: 'Orchard' },
-      road:        { color: '#5a4830', fill: '#8a7858', opacity: 0.25, weight: 2,   icon: '🛣', label: 'Road' },
-      bridge:      { color: '#8a6a20', fill: '#c0a050', opacity: 0.65, weight: 3,   icon: '🌉', label: 'Bridge' },
-      building:    { color: '#3a3a3a', fill: '#5a5a5a', opacity: 0.75, weight: 2.5, icon: '🏠', label: 'Building' },
-      fence_stone: { color: '#5a5a5a', fill: '#888',    opacity: 0.35, weight: 3,   dash: '4,2', icon: '🧱', label: 'Stone Wall' },
-      fence_wood:  { color: '#6a5a38', fill: '#8a7858', opacity: 0.3,  weight: 2,   dash: '3,3', icon: '🪵', label: 'Fence' },
-      trench:      { color: '#3a2a0a', fill: '#5a4520', opacity: 0.55, weight: 2.5, icon: '⚒', label: 'Trench' },
+      forest:      { color: '#4a5a2a', fill: '#5a6a38', opacity: 0.4,  weight: 1.8, icon: '🌲', label: 'Woods' },
+      hill:        { color: '#8a7a48', fill: '#b09860', opacity: 0.25, weight: 1.5, icon: '⛰', label: 'High Ground' },
+      sunken_road: { color: '#3a3020', fill: '#6a5a30', opacity: 0.55, weight: 2.5, icon: '🛤', label: 'Sunken Road' },
+      river:       { color: '#3a8a88', fill: '#5aaba8', opacity: 0.55, weight: 2.5, icon: '🌊', label: 'River' },
+      creek:       { color: '#3a8a88', fill: '#6abab0', opacity: 0.4,  weight: 2,   icon: '💧', label: 'Creek' },
+      marsh:       { color: '#4a8a70', fill: '#6aaa90', opacity: 0.25, weight: 1.5, icon: '🏚', label: 'Marsh' },
+      wheat:       { color: '#9a8a40', fill: '#c8b870', opacity: 0.2,  weight: 0.8, icon: '🌾', label: 'Wheat Field' },
+      orchard:     { color: '#4a5a28', fill: '#5a6a30', opacity: 0.3,  weight: 1.2, icon: '🍎', label: 'Orchard' },
+      road:        { color: '#2a2218', fill: '#2a2218', opacity: 0.15, weight: 2.5, icon: '🛣', label: 'Road' },
+      bridge:      { color: '#3a3020', fill: '#8a7a50', opacity: 0.6,  weight: 2.5, icon: '🌉', label: 'Bridge' },
+      building:    { color: '#1a1a1a', fill: '#1a1a1a', opacity: 0.85, weight: 1.5, icon: '🏠', label: 'Building' },
+      fence_stone: { color: '#3a3a3a', fill: '#5a5a5a', opacity: 0.25, weight: 2.5, dash: '4,2', icon: '🧱', label: 'Stone Wall' },
+      fence_wood:  { color: '#4a3a20', fill: '#6a5a38', opacity: 0.2,  weight: 1.8, dash: '3,3', icon: '🪵', label: 'Fence' },
+      trench:      { color: '#2a2010', fill: '#4a3a20', opacity: 0.5,  weight: 2,   icon: '⚒', label: 'Trench' },
     };
 
     // Initialize an empty tactical terrain overlay layer
@@ -259,12 +275,11 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
   return (
     <div
       ref={containerRef}
-      className="map-background"
+      className={`map-background${isHistorical ? ' map-parchment' : ''}`}
       style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 0,
-        ...(isHistorical ? { background: '#e0cca0' } : {}),
         ...(filterStyles[isHistorical ? 'historical' : mapStyle] || filterStyles.vintage),
       }}
     />
