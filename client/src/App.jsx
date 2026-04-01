@@ -624,12 +624,26 @@ function App() {
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           {/* Arrowhead markers for PBS-style movement arrows — scale with zoom */}
-          <marker id="arrow-union" markerWidth={Math.max(6, 12 * zoomScale)} markerHeight={Math.max(6, 12 * zoomScale)} refX={Math.max(5, 10 * zoomScale)} refY={Math.max(3, 6 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
-            <path d={`M0,0 L0,${Math.max(6, 12 * zoomScale)} L${Math.max(6, 12 * zoomScale)},${Math.max(3, 6 * zoomScale)} z`} fill="#3a7bd5" />
-          </marker>
-          <marker id="arrow-confed" markerWidth={Math.max(6, 12 * zoomScale)} markerHeight={Math.max(6, 12 * zoomScale)} refX={Math.max(5, 10 * zoomScale)} refY={Math.max(3, 6 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
-            <path d={`M0,0 L0,${Math.max(6, 12 * zoomScale)} L${Math.max(6, 12 * zoomScale)},${Math.max(3, 6 * zoomScale)} z`} fill="#c0392b" />
-          </marker>
+          {(() => {
+            const aw = Math.max(5, 10 * zoomScale);  // arrow width (half-height)
+            const ah = Math.max(8, 16 * zoomScale);   // arrow length (pointier)
+            return (
+              <>
+                <marker id="arrow-union" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
+                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="#3a7bd5" />
+                </marker>
+                <marker id="arrow-confed" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
+                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="#c0392b" />
+                </marker>
+                <marker id="arrow-union-faded" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
+                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="rgba(58,123,213,0.18)" />
+                </marker>
+                <marker id="arrow-confed-faded" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
+                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="rgba(192,57,43,0.18)" />
+                </marker>
+              </>
+            );
+          })()}
         </defs>
 
         {/* Fog of War — dark overlay covering areas outside friendly sight */}
@@ -732,6 +746,23 @@ function App() {
               pointerEvents="none" />
           </>
         )}
+
+        {/* Persistent faded movement arrows showing current orders */}
+        {gameState.groups.filter(g => g.owner === 1 && g.path && g.path.length > 0 && g.count > 0).map(g => {
+          const pts = [{ x: g.x, y: g.y }, ...g.path];
+          if (pts.length < 2) return null;
+          const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+          const isUnion = g.owner === 1;
+          const color = isUnion ? 'rgba(58,123,213,0.15)' : 'rgba(192,57,43,0.15)';
+          const markerId = isUnion ? 'arrow-union-faded' : 'arrow-confed-faded';
+          return (
+            <path key={`order-${g.id}`} d={d}
+              fill="none" stroke={color} strokeWidth={Math.max(1, 3 * zoomScale)}
+              strokeLinecap="round" strokeLinejoin="round"
+              markerEnd={`url(#${markerId})`}
+              pointerEvents="none" />
+          );
+        })}
 
         {/* Freeform Path Drawing — bold PBS-style movement arrows */}
         {dragState?.type === 'path' && dragState.points.length > 1 && (() => {
