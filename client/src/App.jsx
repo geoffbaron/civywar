@@ -29,7 +29,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [currentBattle, setCurrentBattle] = useState('antietam');
-  const [tileLayer, setTileLayer] = useState('watercolor');
+  const [tileLayer, setTileLayer] = useState('none');
   const [mapStyle, setMapStyle] = useState('vintage');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
   const [mapWidth, setMapWidth] = useState(1200);
@@ -522,6 +522,7 @@ function App() {
           <label className="sidebar-label">Map Tiles</label>
           <select className="sidebar-select" value={tileLayer}
             onChange={(e) => setTileLayer(e.target.value)}>
+            <option value="none">None (Parchment)</option>
             {Object.entries(TILE_LAYERS).map(([key, tl]) => (
               <option key={key} value={key}>{tl.name}</option>
             ))}

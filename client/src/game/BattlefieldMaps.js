@@ -247,12 +247,21 @@ export const BATTLEFIELDS = {
 
 // Tile layer options — user can switch between these
 export const TILE_LAYERS = {
-  // Stamen Toner-lite via Stadia — neutral grey base, doesn't paint competing terrain
-  parchment: {
-    name: 'Parchment',
-    url: 'https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png',
+  // Stamen Toner-labels via Stadia — just place names, no terrain fills
+  labels: {
+    name: 'Labels Only',
+    url: 'https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png',
     attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap',
     maxZoom: 18,
+    opacity: 0.5,
+  },
+  // Stamen Toner-lines via Stadia — road lines + labels, no terrain fills
+  lines: {
+    name: 'Roads & Labels',
+    url: 'https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}{r}.png',
+    attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap',
+    maxZoom: 18,
+    opacity: 0.3,
   },
   // Stamen Watercolor via Stadia — hand-drawn parchment look
   watercolor: {
