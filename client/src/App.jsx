@@ -51,7 +51,7 @@ function App() {
   const [isPanMode, setIsPanMode] = useState(false);
   const [zoomScale, setZoomScale] = useState(1); // Scale units based on zoom
   const refZoomRef = useRef(16); // Reference zoom level — updated on map ready
-  const [showTacticalOverlay, setShowTacticalOverlay] = useState(true);
+  const [showTacticalOverlay, setShowTacticalOverlay] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
 
   // Compute live transformed map data for calibration

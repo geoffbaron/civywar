@@ -38,6 +38,10 @@ const BATTLEFIELDS = {
     bounds: [38.2900, -77.6700, 38.3250, -77.6000],
     name: 'CHANCELLORSVILLE_TERRAIN',
   },
+  shiloh: {
+    bounds: [35.1250, -88.3700, 35.1650, -88.3050],
+    name: 'SHILOH_TERRAIN',
+  },
 };
 
 // ─── OSM tag → game terrain type mapping ───

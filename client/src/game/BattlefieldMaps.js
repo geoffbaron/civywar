@@ -8,6 +8,7 @@
 import { ANTIETAM_TERRAIN } from './terrain/antietam.js';
 import { GETTYSBURG_TERRAIN } from './terrain/gettysburg.js';
 import { CHANCELLORSVILLE_TERRAIN } from './terrain/chancellorsville.js';
+import { SHILOH_TERRAIN } from './terrain/shiloh.js';
 
 export const BATTLEFIELDS = {
   antietam: {
@@ -181,6 +182,65 @@ export const BATTLEFIELDS = {
       { owner: 2, lat: 38.3000, lng: -77.6080, count: 15, unitType: 'cannon' },
       // Commander
       { owner: 2, lat: 38.3050, lng: -77.6060, count: 10, unitType: 'commander' },
+    ],
+  },
+
+  shiloh: {
+    name: 'Battle of Shiloh',
+    date: 'April 6-7, 1862',
+    description: "Johnston's surprise attack at Pittsburg Landing. Grant holds and counterattacks on Day 2.",
+    bounds: [[35.1250, -88.3700], [35.1650, -88.3050]],
+    center: [35.1450, -88.3375],
+    zoom: 14,
+    geoTerrain: SHILOH_TERRAIN,
+
+    forts: [
+      { id: 'u1', lat: 35.1580, lng: -88.3200, owner: 1, garrison: 35, rate: 2.5, label: 'Pittsburg Landing' },
+      { id: 'u2', lat: 35.1500, lng: -88.3250, owner: 1, garrison: 40, rate: 2.5, label: "Hornet's Nest" },
+      { id: 'u3', lat: 35.1430, lng: -88.3300, owner: 1, garrison: 30, rate: 2.0, label: 'Shiloh Church' },
+      { id: 'c1', lat: 35.1300, lng: -88.3600, owner: 2, garrison: 30, rate: 2.0, label: 'Hardee' },
+      { id: 'c2', lat: 35.1350, lng: -88.3500, owner: 2, garrison: 35, rate: 2.2, label: 'Johnston HQ' },
+      { id: 'c3', lat: 35.1280, lng: -88.3400, owner: 2, garrison: 25, rate: 1.8, label: 'Breckinridge' },
+    ],
+
+    // Historical: Union ~63k (Day 2 with reinforcements) vs Confederate ~44k (1.43:1)
+    // Day 1: Johnston surprised Grant's camps. Fierce fighting at Hornet's Nest.
+    // Johnston killed at Peach Orchard. Beauregard assumed command.
+    // Night: Buell's Army of Ohio arrived as Union reinforcement.
+    // Day 2: Grant counterattacked with fresh troops and pushed Confederates back.
+    // Shiloh was primarily an infantry fight in wooded terrain with limited cavalry.
+    units: [
+      // UNION — surprised in camp, strong defensive positions at Landing
+      { owner: 1, lat: 35.1570, lng: -88.3180, count: 60, unitType: 'infantry' }, // Wallace division (Landing)
+      { owner: 1, lat: 35.1545, lng: -88.3220, count: 55, unitType: 'infantry' }, // Hurlbut division
+      { owner: 1, lat: 35.1520, lng: -88.3260, count: 60, unitType: 'infantry' }, // W.H.L. Wallace (Hornet's Nest)
+      { owner: 1, lat: 35.1495, lng: -88.3290, count: 55, unitType: 'infantry' }, // Prentiss division (Hornet's Nest)
+      { owner: 1, lat: 35.1460, lng: -88.3320, count: 50, unitType: 'infantry' }, // Sherman division (Shiloh Church)
+      { owner: 1, lat: 35.1435, lng: -88.3350, count: 50, unitType: 'infantry' }, // McClernand division
+      { owner: 1, lat: 35.1410, lng: -88.3380, count: 45, unitType: 'infantry' }, // Stuart brigade (far left)
+      // Cavalry — minimal at Shiloh
+      { owner: 1, lat: 35.1560, lng: -88.3150, count: 20, unitType: 'cavalry' }, // Screening at Landing
+      // Artillery — positioned along Sunken Road and Landing bluffs
+      { owner: 1, lat: 35.1555, lng: -88.3200, count: 25, unitType: 'cannon' }, // Landing batteries
+      { owner: 1, lat: 35.1510, lng: -88.3270, count: 22, unitType: 'cannon' }, // Hornet's Nest guns
+      { owner: 1, lat: 35.1450, lng: -88.3340, count: 20, unitType: 'cannon' }, // Sherman's batteries
+      // Commander
+      { owner: 1, lat: 35.1530, lng: -88.3200, count: 10, unitType: 'commander' }, // Grant
+
+      // CONFEDERATE — attacking from south, four corps in waves
+      { owner: 2, lat: 35.1320, lng: -88.3550, count: 50, unitType: 'infantry' }, // Hardee (1st line)
+      { owner: 2, lat: 35.1340, lng: -88.3520, count: 50, unitType: 'infantry' }, // Bragg (2nd line)
+      { owner: 2, lat: 35.1300, lng: -88.3480, count: 55, unitType: 'infantry' }, // Polk corps
+      { owner: 2, lat: 35.1280, lng: -88.3450, count: 45, unitType: 'infantry' }, // Breckinridge reserve
+      { owner: 2, lat: 35.1360, lng: -88.3490, count: 55, unitType: 'infantry' }, // Cheatham division
+      { owner: 2, lat: 35.1310, lng: -88.3420, count: 40, unitType: 'infantry' }, // Withers division
+      // Cavalry — light presence
+      { owner: 2, lat: 35.1270, lng: -88.3600, count: 25, unitType: 'cavalry' }, // Forrest's cavalry
+      // Artillery — Confederate guns at Shiloh
+      { owner: 2, lat: 35.1330, lng: -88.3540, count: 20, unitType: 'cannon' }, // Hardee's batteries
+      { owner: 2, lat: 35.1290, lng: -88.3460, count: 18, unitType: 'cannon' }, // Reserve artillery
+      // Commander
+      { owner: 2, lat: 35.1350, lng: -88.3500, count: 10, unitType: 'commander' }, // Johnston
     ],
   },
 };
