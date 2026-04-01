@@ -183,7 +183,7 @@ body, html {
   z-index: 0;
 }
 .map-background .leaflet-container {
-  background: #e8dcc0; /* warm parchment — visible where no tiles load */
+  background: #e8dcc0; /* warm parchment — visible where tiles haven't loaded */
 }
 
 /* SVG game overlay — sits on top of the Leaflet map */

@@ -34,7 +34,7 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
     });
 
     // Add tile layer
-    const tileDef = TILE_LAYERS[tileLayer] || TILE_LAYERS.parchment;
+    const tileDef = TILE_LAYERS[tileLayer] || TILE_LAYERS.watercolor;
     L.tileLayer(tileDef.url, {
       maxZoom: tileDef.maxZoom,
       attribution: tileDef.attribution,
@@ -44,23 +44,23 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
     }).addTo(map);
 
     // ─── Terrain type → display config ───
-    // Bold, clear, saturated fills — terrain IS the primary visual.
-    // What you see is what affects gameplay. Each type has a distinct color.
+    // Soft translucent washes like hand-painted Civil War military maps.
+    // Light, warm fills over watercolor tiles — clear but not heavy.
     const TERRAIN_STYLES = {
-      forest:      { color: '#3a5a20', fillColor: '#4a7a2a', opacity: 0.70, weight: 1.5, icon: '🌲', label: 'Woods' },
-      hill:        { color: '#9a7a40', fillColor: '#c8a858', opacity: 0.60, weight: 1.8, icon: '⛰', label: 'High Ground' },
-      sunken_road: { color: '#8a6830', fillColor: '#b89050', opacity: 0.55, weight: 2.5, icon: '🛤', label: 'Sunken Road' },
-      river:       { color: '#2868a0', fillColor: '#4088c0', opacity: 0.75, weight: 2.0, icon: '🌊', label: 'River' },
-      creek:       { color: '#3878a8', fillColor: '#58a0c8', opacity: 0.65, weight: 1.5, icon: '💧', label: 'Creek' },
-      marsh:       { color: '#508868', fillColor: '#70a888', opacity: 0.50, weight: 1.0, icon: '🏚', label: 'Marsh' },
-      wheat:       { color: '#b8a040', fillColor: '#d8c860', opacity: 0.50, weight: 1.0, icon: '🌾', label: 'Wheat Field' },
-      orchard:     { color: '#4a7830', fillColor: '#6a9848', opacity: 0.60, weight: 1.2, icon: '🍎', label: 'Orchard' },
-      road:        { color: '#7a6840', fillColor: '#a89060', opacity: 0.45, weight: 2.5, icon: '🛣', label: 'Road' },
-      bridge:      { color: '#6a5830', fillColor: '#a08848', opacity: 0.60, weight: 2.5, icon: '🌉', label: 'Bridge' },
-      building:    { color: '#5a4030', fillColor: '#7a5840', opacity: 0.75, weight: 2.0, icon: '🏠', label: 'Building' },
-      fence_stone: { color: '#605848', fillColor: '#807060', opacity: 0.45, weight: 2.5, dash: '5,3', icon: '🧱', label: 'Stone Wall' },
-      fence_wood:  { color: '#8a7848', fillColor: '#a89868', opacity: 0.35, weight: 2.0, dash: '4,4', icon: '🪵', label: 'Fence' },
-      trench:      { color: '#5a4828', fillColor: '#806838', opacity: 0.50, weight: 2.0, icon: '⚒', label: 'Trench' },
+      forest:      { color: '#6a8a48', fillColor: '#8ab060', opacity: 0.35, weight: 0.8, icon: '🌲', label: 'Woods' },
+      hill:        { color: '#c0a060', fillColor: '#d8c088', opacity: 0.35, weight: 1.0, icon: '⛰', label: 'High Ground' },
+      sunken_road: { color: '#a08850', fillColor: '#c0a870', opacity: 0.30, weight: 1.5, icon: '🛤', label: 'Sunken Road' },
+      river:       { color: '#5090c0', fillColor: '#70b0e0', opacity: 0.45, weight: 1.5, icon: '🌊', label: 'River' },
+      creek:       { color: '#60a0c8', fillColor: '#80c0e0', opacity: 0.40, weight: 1.0, icon: '💧', label: 'Creek' },
+      marsh:       { color: '#78a878', fillColor: '#90c098', opacity: 0.30, weight: 0.6, icon: '🏚', label: 'Marsh' },
+      wheat:       { color: '#c8b050', fillColor: '#e8d878', opacity: 0.30, weight: 0.6, icon: '🌾', label: 'Wheat Field' },
+      orchard:     { color: '#78a050', fillColor: '#98c070', opacity: 0.35, weight: 0.8, icon: '🍎', label: 'Orchard' },
+      road:        { color: '#a89068', fillColor: '#c8b088', opacity: 0.20, weight: 1.5, icon: '🛣', label: 'Road' },
+      bridge:      { color: '#988050', fillColor: '#b8a068', opacity: 0.35, weight: 1.5, icon: '🌉', label: 'Bridge' },
+      building:    { color: '#887060', fillColor: '#a89080', opacity: 0.45, weight: 1.0, icon: '🏠', label: 'Building' },
+      fence_stone: { color: '#807060', fillColor: '#a09080', opacity: 0.25, weight: 1.5, dash: '4,3', icon: '🧱', label: 'Stone Wall' },
+      fence_wood:  { color: '#a09070', fillColor: '#b8a888', opacity: 0.18, weight: 1.0, dash: '3,3', icon: '🪵', label: 'Fence' },
+      trench:      { color: '#807048', fillColor: '#a09060', opacity: 0.30, weight: 1.2, icon: '⚒', label: 'Trench' },
     };
 
     // Initialize an empty tactical terrain overlay layer
