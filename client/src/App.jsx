@@ -747,8 +747,8 @@ function App() {
               pointerEvents="none" />
           );
           const ux = dx / len, uy = dy / len;
-          const aw = Math.max(5, 10 * zoomScale);
-          const ah = Math.max(8, 16 * zoomScale);
+          const aw = Math.max(4, 7 * zoomScale);
+          const ah = Math.max(6, 12 * zoomScale);
           const tip = last;
           const base1 = { x: tip.x - ux * ah + uy * aw, y: tip.y - uy * ah - ux * aw };
           const base2 = { x: tip.x - ux * ah - uy * aw, y: tip.y - uy * ah + ux * aw };
@@ -758,7 +758,7 @@ function App() {
                 fill="none" stroke={color} strokeWidth={Math.max(1, 3 * zoomScale)}
                 strokeLinecap="round" strokeLinejoin="round" />
               <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
-                fill="rgba(58,123,213,0.18)" />
+                fill="rgba(58,123,213,0.35)" stroke="rgba(58,123,213,0.25)" strokeWidth={1} />
             </g>
           );
         })}
@@ -780,8 +780,8 @@ function App() {
           const dy = last.y - prev.y;
           const len = Math.hypot(dx, dy);
           const ux = len > 0 ? dx / len : 1, uy = len > 0 ? dy / len : 0;
-          const aw = Math.max(5, 10 * zoomScale);
-          const ah = Math.max(8, 16 * zoomScale);
+          const aw = Math.max(4, 7 * zoomScale);
+          const ah = Math.max(6, 12 * zoomScale);
           const tip = last;
           const base1 = { x: tip.x - ux * ah + uy * aw, y: tip.y - uy * ah - ux * aw };
           const base2 = { x: tip.x - ux * ah - uy * aw, y: tip.y - uy * ah + ux * aw };
@@ -791,7 +791,7 @@ function App() {
                 fill="none" stroke={arrowColor} strokeWidth={Math.max(1, 4 * zoomScale)}
                 strokeLinecap="round" strokeLinejoin="round" />
               <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
-                fill={fillColor} />
+                fill={fillColor} stroke={fillColor} strokeWidth={1} />
             </g>
           );
         })()}
