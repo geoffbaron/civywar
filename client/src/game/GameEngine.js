@@ -233,11 +233,11 @@ export class GameEngine {
     // Cannons on hills get massive range; cannons in woods are nearly useless
     const mult = terrain.label === 'High Ground' ? (isCannon ? 1.8 : 1.35)
       : terrain.label === 'Open Field' ? 1.12
-      : terrain.label === 'Woods' || terrain.label === 'Forest' ? (isCannon ? 0.12 : 0.3)
+      : terrain.label === 'Woods' || terrain.label === 'Forest' ? (isCannon ? 0.06 : 0.3)
       : terrain.label === 'Building' ? 0.4
-      : terrain.label === 'Marsh' ? 0.6
-      : terrain.label === 'Creek' || terrain.label === 'River' ? 0.7
-      : terrain.label === 'Sunken Road' ? 0.65
+      : terrain.label === 'Marsh' ? (isCannon ? 0.15 : 0.6)
+      : terrain.label === 'Creek' || terrain.label === 'River' ? (isCannon ? 0.08 : 0.7)
+      : terrain.label === 'Sunken Road' ? (isCannon ? 0.08 : 0.65)
       : 1.0;
     return base * mult;
   }
