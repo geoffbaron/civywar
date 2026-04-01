@@ -247,6 +247,13 @@ export const BATTLEFIELDS = {
 
 // Tile layer options — user can switch between these
 export const TILE_LAYERS = {
+  // Historical — parchment background, no tiles (terrain overlay only)
+  historical: {
+    name: 'Historical',
+    url: null,
+    attribution: '',
+    maxZoom: 19,
+  },
   // OpenTopoMap — free, no key, shows terrain contours
   topo: {
     name: 'Terrain',

@@ -4,6 +4,47 @@ import 'leaflet/dist/leaflet.css';
 import { TILE_LAYERS } from './BattlefieldMaps';
 import { TERRAIN } from './MapData';
 
+// ─── Inject SVG pattern definitions into the Leaflet SVG renderer ───
+// These patterns emulate hand-drawn historical military map styling:
+// tree shapes for forests, hachure marks for hills, etc.
+function injectTerrainPatterns(svgEl) {
+  if (svgEl.querySelector('.terrain-patterns')) return;
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.setAttribute('class', 'terrain-patterns');
+  defs.innerHTML = `
+    <pattern id="pat-forest" width="18" height="22" patternUnits="userSpaceOnUse">
+      <rect width="18" height="22" fill="#1a4a12" fill-opacity="0.22"/>
+      <polygon points="5,1 1,10 9,10" fill="#0e3508" fill-opacity="0.7"/>
+      <polygon points="5,3.5 2.5,10 7.5,10" fill="#16450e" fill-opacity="0.5"/>
+      <rect x="4" y="10" width="2" height="2.5" fill="#3a2008" fill-opacity="0.45"/>
+      <polygon points="14,7 10,16 18,16" fill="#0e3508" fill-opacity="0.6"/>
+      <polygon points="14,9.5 11.5,16 16.5,16" fill="#16450e" fill-opacity="0.4"/>
+      <rect x="13" y="16" width="2" height="2.5" fill="#3a2008" fill-opacity="0.4"/>
+    </pattern>
+    <pattern id="pat-hill" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(50)">
+      <rect width="8" height="8" fill="#c4a060" fill-opacity="0.15"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#7a5a28" stroke-width="1.5" stroke-opacity="0.4"/>
+    </pattern>
+    <pattern id="pat-marsh" width="20" height="8" patternUnits="userSpaceOnUse">
+      <rect width="20" height="8" fill="#5a9ab0" fill-opacity="0.08"/>
+      <path d="M0,4 Q5,1 10,4 Q15,7 20,4" fill="none" stroke="#2a7080" stroke-width="1.2" stroke-opacity="0.4"/>
+    </pattern>
+    <pattern id="pat-orchard" width="14" height="14" patternUnits="userSpaceOnUse">
+      <rect width="14" height="14" fill="#4a7820" fill-opacity="0.1"/>
+      <circle cx="7" cy="7" r="3" fill="#3a6818" fill-opacity="0.45" stroke="#2a5010" stroke-width="0.5" stroke-opacity="0.3"/>
+    </pattern>
+  `;
+  svgEl.prepend(defs);
+}
+
+// Terrain types that use patterned fills instead of solid color
+const PATTERN_FILLS = {
+  forest: 'pat-forest',
+  hill: 'pat-hill',
+  marsh: 'pat-marsh',
+  orchard: 'pat-orchard',
+};
+
 export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyle = 'vintage', showTacticalOverlay = true, onMapReady, onMapMove }) {
   const containerRef = useRef(null);
   const [mapInstance, setMapInstance] = useState(null);
@@ -33,32 +74,34 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
       maxZoom: Math.min((battlefield.zoom || 14) + 4, 19),
     });
 
-    // Add tile layer
+    // Add tile layer (skip for historical parchment mode)
     const tileDef = TILE_LAYERS[tileLayer] || TILE_LAYERS.topo;
-    L.tileLayer(tileDef.url, {
-      maxZoom: tileDef.maxZoom,
-      attribution: tileDef.attribution,
-      keepBuffer: 8,
-      updateWhenZooming: false,
-      updateWhenIdle: true,
-    }).addTo(map);
+    if (tileDef.url) {
+      L.tileLayer(tileDef.url, {
+        maxZoom: tileDef.maxZoom,
+        attribution: tileDef.attribution,
+        keepBuffer: 8,
+        updateWhenZooming: false,
+        updateWhenIdle: true,
+      }).addTo(map);
+    }
 
-    // Terrain type → display config
+    // Terrain type → display config (historical military map aesthetic)
     const TERRAIN_STYLES = {
-      forest:      { color: '#0a6618', fill: '#1a9930', opacity: 0.6,  weight: 2.5, icon: '🌲', label: 'Woods' },
-      hill:        { color: '#9a7040', fill: '#c49a60', opacity: 0.5,  weight: 2.5, dash: '5,3', icon: '⛰', label: 'High Ground' },
-      sunken_road: { color: '#8B6914', fill: '#d4a520', opacity: 0.6,  weight: 3,   icon: '🛤', label: 'Sunken Road' },
-      river:       { color: '#1540bb', fill: '#2860ee', opacity: 0.7,  weight: 2.5, icon: '🌊', label: 'River' },
-      creek:       { color: '#1a50bb', fill: '#3878dd', opacity: 0.65, weight: 2.5, icon: '💧', label: 'Creek' },
-      marsh:       { color: '#2a6080', fill: '#4a99bb', opacity: 0.55, weight: 1.5, icon: '🏚', label: 'Marsh' },
-      wheat:       { color: '#c8a010', fill: '#eedd40', opacity: 0.5,  weight: 1.5, dash: '3,2', icon: '🌾', label: 'Wheat Field' },
-      orchard:     { color: '#5a8825', fill: '#78bb38', opacity: 0.5,  weight: 1.5, icon: '🍎', label: 'Orchard' },
-      road:        { color: '#8a7850', fill: '#bba878', opacity: 0.55, weight: 2.5, dash: '6,3', icon: '🛣', label: 'Road' },
-      bridge:      { color: '#b0903a', fill: '#e0c870', opacity: 0.75, weight: 3.5, icon: '🌉', label: 'Bridge' },
-      building:    { color: '#444',    fill: '#777',    opacity: 0.7,  weight: 2.5, icon: '🏠', label: 'Building' },
-      fence_stone: { color: '#707070', fill: '#999',    opacity: 0.6,  weight: 3.5, icon: '🧱', label: 'Stone Wall' },
-      fence_wood:  { color: '#7a6a4a', fill: '#988060', opacity: 0.55, weight: 2.5, icon: '🪵', label: 'Fence' },
-      trench:      { color: '#4a3a1a', fill: '#6a5530', opacity: 0.6,  weight: 2.5, icon: '⚒', label: 'Trench' },
+      forest:      { color: '#1a4a10', fill: '#1a4a10', opacity: 0.35, weight: 1.5, icon: '🌲', label: 'Woods' },
+      hill:        { color: '#8a6a30', fill: '#c4a060', opacity: 0.3,  weight: 2,   dash: '5,3', icon: '⛰', label: 'High Ground' },
+      sunken_road: { color: '#6a4a0a', fill: '#b08a30', opacity: 0.5,  weight: 3,   icon: '🛤', label: 'Sunken Road' },
+      river:       { color: '#1a6a70', fill: '#2a8a88', opacity: 0.55, weight: 3,   icon: '🌊', label: 'River' },
+      creek:       { color: '#1a6a70', fill: '#3a9a90', opacity: 0.45, weight: 2.5, icon: '💧', label: 'Creek' },
+      marsh:       { color: '#2a7080', fill: '#4a99bb', opacity: 0.3,  weight: 1.5, icon: '🏚', label: 'Marsh' },
+      wheat:       { color: '#a08a20', fill: '#d8c040', opacity: 0.25, weight: 1,   dash: '3,2', icon: '🌾', label: 'Wheat Field' },
+      orchard:     { color: '#3a6a20', fill: '#5a8830', opacity: 0.3,  weight: 1.5, icon: '🍎', label: 'Orchard' },
+      road:        { color: '#5a4830', fill: '#8a7858', opacity: 0.25, weight: 2,   icon: '🛣', label: 'Road' },
+      bridge:      { color: '#8a6a20', fill: '#c0a050', opacity: 0.65, weight: 3,   icon: '🌉', label: 'Bridge' },
+      building:    { color: '#3a3a3a', fill: '#5a5a5a', opacity: 0.75, weight: 2.5, icon: '🏠', label: 'Building' },
+      fence_stone: { color: '#5a5a5a', fill: '#888',    opacity: 0.35, weight: 3,   dash: '4,2', icon: '🧱', label: 'Stone Wall' },
+      fence_wood:  { color: '#6a5a38', fill: '#8a7858', opacity: 0.3,  weight: 2,   dash: '3,3', icon: '🪵', label: 'Fence' },
+      trench:      { color: '#3a2a0a', fill: '#5a4520', opacity: 0.55, weight: 2.5, icon: '⚒', label: 'Trench' },
     };
 
     // Initialize an empty tactical terrain overlay layer
@@ -106,6 +149,19 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
               opacity: 0.95,
             }
           );
+
+          // Apply SVG pattern fills for organic terrain types (forests, hills, etc.)
+          const patId = PATTERN_FILLS[type];
+          if (patId) {
+            layer.on('add', () => {
+              const el = layer.getElement?.();
+              if (!el) return;
+              const svg = el.ownerSVGElement;
+              if (svg) injectTerrainPatterns(svg);
+              el.style.fill = `url(#${patId})`;
+              el.style.fillOpacity = '1';
+            });
+          }
         }
       });
       
@@ -192,9 +248,13 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
     vintage: { filter: 'sepia(0.5) saturate(0.6) brightness(0.95) contrast(1.05)' },
     warm: { filter: 'sepia(0.35) saturate(0.7) brightness(1.0)' },
     parchment: { filter: 'sepia(0.7) saturate(0.4) brightness(0.9) contrast(1.1)' },
+    historical: { filter: 'sepia(0.6) saturate(0.35) brightness(0.95) contrast(1.05)' },
     natural: { filter: 'none' },
     dark: { filter: 'sepia(0.3) saturate(0.5) brightness(0.7) contrast(1.2)' },
   };
+
+  // Historical tile layer uses a parchment background instead of tiles
+  const isHistorical = tileLayer === 'historical';
 
   return (
     <div
@@ -204,7 +264,8 @@ export default function MapBackground({ battlefield, tileLayer = 'topo', mapStyl
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 0,
-        ...(filterStyles[mapStyle] || filterStyles.vintage),
+        ...(isHistorical ? { background: '#e0cca0' } : {}),
+        ...(filterStyles[isHistorical ? 'historical' : mapStyle] || filterStyles.vintage),
       }}
     />
 
