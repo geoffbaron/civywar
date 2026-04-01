@@ -700,8 +700,15 @@ export class GameEngine {
     groupIds.forEach(id => {
       const g = this.groups.find(gr => gr.id === id);
       if (g) {
+         // Drop leading waypoints that are near the unit (avoids backward movement)
+         let startIdx = 0;
+         while (startIdx < pathPoints.length - 1 &&
+                Math.hypot(pathPoints[startIdx].x - g.x, pathPoints[startIdx].y - g.y) < 30) {
+           startIdx++;
+         }
+         const trimmed = pathPoints.slice(startIdx);
          // Create a noisy clone of the path to avoid pure grouping overlap
-         g.path = pathPoints.map(p => {
+         g.path = trimmed.map(p => {
            const px = p.x + (Math.random() * 20 - 10);
            const py = p.y + (Math.random() * 20 - 10);
            return this._wp(px, py);
