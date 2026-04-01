@@ -229,10 +229,11 @@ export class GameEngine {
   getEffectiveRange(group) {
     const base = this.getRange(group.unitType);
     const terrain = this.getTerrainAt(group.x, group.y);
-    // Hills and open ground extend range; forests severely restrict it; low areas reduce it
-    const mult = terrain.label === 'High Ground' ? 1.35
+    const isCannon = group.unitType === 'cannon';
+    // Cannons on hills get massive range; cannons in woods are nearly useless
+    const mult = terrain.label === 'High Ground' ? (isCannon ? 1.8 : 1.35)
       : terrain.label === 'Open Field' ? 1.12
-      : terrain.label === 'Woods' || terrain.label === 'Forest' ? 0.3
+      : terrain.label === 'Woods' || terrain.label === 'Forest' ? (isCannon ? 0.12 : 0.3)
       : terrain.label === 'Building' ? 0.4
       : terrain.label === 'Marsh' ? 0.6
       : terrain.label === 'Creek' || terrain.label === 'River' ? 0.7
@@ -480,8 +481,15 @@ export class GameEngine {
         const bCanSee = this.groups.filter(f => f.owner === b.owner)
           .some(f => Math.hypot(f.x - a.x, f.y - a.y) < this.getSightRange(f.unitType));
 
+        // Hill cannons shoot over woods — negate target's woods defense
+        const aIgnoresWoodsDef = a.unitType === 'cannon' && aTerrain.label === 'High Ground'
+          && (bTerrain.label === 'Woods' || bTerrain.label === 'Forest');
+        const bIgnoresWoodsDef = b.unitType === 'cannon' && bTerrain.label === 'High Ground'
+          && (aTerrain.label === 'Woods' || aTerrain.label === 'Forest');
+
         if (aCanFire && aCanSee && dist < aRange) {
-          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / bTerrain.defense) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b);
+          const defB = aIgnoresWoodsDef ? 1.0 : bTerrain.defense;
+          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b);
           b.count -= aDps * dt;
           b.morale -= 3 * dt;  // b is under fire
           a.isEngaged = true;
@@ -493,7 +501,8 @@ export class GameEngine {
           }
         }
         if (bCanFire && bCanSee && dist < bRange) {
-          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / aTerrain.defense) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a);
+          const defA = bIgnoresWoodsDef ? 1.0 : aTerrain.defense;
+          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a);
           a.count -= bDps * dt;
           a.morale -= 3 * dt;  // a is under fire
           b.isEngaged = true;
