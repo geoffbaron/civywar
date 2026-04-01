@@ -29,7 +29,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [currentBattle, setCurrentBattle] = useState('antietam');
-  const [tileLayer, setTileLayer] = useState('watercolor');
+  const [tileLayer, setTileLayer] = useState('parchment');
   const [mapStyle, setMapStyle] = useState('vintage');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
   const [mapWidth, setMapWidth] = useState(1200);
