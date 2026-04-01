@@ -469,11 +469,11 @@ export class GameEngine {
           (b.unitType !== 'cannon' ? !b.isMoving
             : (!b.isMoving && (this.time - (b.stopTime || 0) >= 3000)));
 
-        const typeMult = { infantry: 1.0, cavalry: 0.85, cannon: 1.5, commander: 0 };
+        const typeMult = { infantry: 1.0, cavalry: 0.85, cannon: 1.3, commander: 0 };
 
         // Cannons are much less effective against moving targets
         const cannonVsMoving = (attacker, target) =>
-          (attacker.unitType === 'cannon' && target.isMoving) ? 0.35 : 1.0;
+          (attacker.unitType === 'cannon' && target.isMoving) ? 0.2 : 1.0;
 
         // Also require enemy to be visible (within sight range of any friendly)
         const aCanSee = this.groups.filter(f => f.owner === a.owner)
