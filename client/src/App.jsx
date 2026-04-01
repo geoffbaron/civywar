@@ -615,12 +615,12 @@ function App() {
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          {/* Arrowhead markers for PBS-style movement arrows */}
-          <marker id="arrow-union" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#3a7bd5" />
+          {/* Arrowhead markers for PBS-style movement arrows — scale with zoom */}
+          <marker id="arrow-union" markerWidth={Math.max(3, 6 * zoomScale)} markerHeight={Math.max(3, 6 * zoomScale)} refX={Math.max(2.5, 5 * zoomScale)} refY={Math.max(1.5, 3 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
+            <path d={`M0,0 L0,${Math.max(3, 6 * zoomScale)} L${Math.max(3, 6 * zoomScale)},${Math.max(1.5, 3 * zoomScale)} z`} fill="#3a7bd5" />
           </marker>
-          <marker id="arrow-confed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#c0392b" />
+          <marker id="arrow-confed" markerWidth={Math.max(3, 6 * zoomScale)} markerHeight={Math.max(3, 6 * zoomScale)} refX={Math.max(2.5, 5 * zoomScale)} refY={Math.max(1.5, 3 * zoomScale)} orient="auto" markerUnits="userSpaceOnUse">
+            <path d={`M0,0 L0,${Math.max(3, 6 * zoomScale)} L${Math.max(3, 6 * zoomScale)},${Math.max(1.5, 3 * zoomScale)} z`} fill="#c0392b" />
           </marker>
         </defs>
 
@@ -737,7 +737,7 @@ function App() {
           const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
           return (
             <path d={d}
-              fill="none" stroke={arrowColor} strokeWidth={Math.max(1.5, 7 * zoomScale)}
+              fill="none" stroke={arrowColor} strokeWidth={Math.max(1, 4 * zoomScale)}
               strokeLinecap="round" strokeLinejoin="round"
               markerEnd={`url(#${markerId})`}
               pointerEvents="none" />
