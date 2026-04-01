@@ -624,26 +624,7 @@ function App() {
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           {/* Arrowhead markers for PBS-style movement arrows — scale with zoom */}
-          {(() => {
-            const aw = Math.max(5, 10 * zoomScale);  // arrow width (half-height)
-            const ah = Math.max(8, 16 * zoomScale);   // arrow length (pointier)
-            return (
-              <>
-                <marker id="arrow-union" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
-                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="#3a7bd5" />
-                </marker>
-                <marker id="arrow-confed" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
-                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="#c0392b" />
-                </marker>
-                <marker id="arrow-union-faded" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
-                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="rgba(58,123,213,0.18)" />
-                </marker>
-                <marker id="arrow-confed-faded" markerWidth={ah} markerHeight={aw * 2} refX={ah} refY={aw} orient="auto" markerUnits="userSpaceOnUse">
-                  <path d={`M0,0 L0,${aw * 2} L${ah},${aw} z`} fill="rgba(192,57,43,0.18)" />
-                </marker>
-              </>
-            );
-          })()}
+          {/* (arrowheads now drawn manually as polygons for correct direction) */}
         </defs>
 
         {/* Fog of War — dark overlay covering areas outside friendly sight */}
@@ -752,15 +733,33 @@ function App() {
           const pts = [{ x: g.x, y: g.y }, ...g.path];
           if (pts.length < 2) return null;
           const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-          const isUnion = g.owner === 1;
-          const color = isUnion ? 'rgba(58,123,213,0.15)' : 'rgba(192,57,43,0.15)';
-          const markerId = isUnion ? 'arrow-union-faded' : 'arrow-confed-faded';
-          return (
+          const color = 'rgba(58,123,213,0.15)';
+          // Compute arrowhead from last two points
+          const last = pts[pts.length - 1];
+          const prev = pts[pts.length - 2];
+          const dx = last.x - prev.x;
+          const dy = last.y - prev.y;
+          const len = Math.hypot(dx, dy);
+          if (len < 1) return (
             <path key={`order-${g.id}`} d={d}
               fill="none" stroke={color} strokeWidth={Math.max(1, 3 * zoomScale)}
               strokeLinecap="round" strokeLinejoin="round"
-              markerEnd={`url(#${markerId})`}
               pointerEvents="none" />
+          );
+          const ux = dx / len, uy = dy / len;
+          const aw = Math.max(5, 10 * zoomScale);
+          const ah = Math.max(8, 16 * zoomScale);
+          const tip = last;
+          const base1 = { x: tip.x - ux * ah + uy * aw, y: tip.y - uy * ah - ux * aw };
+          const base2 = { x: tip.x - ux * ah - uy * aw, y: tip.y - uy * ah + ux * aw };
+          return (
+            <g key={`order-${g.id}`} pointerEvents="none">
+              <path d={d}
+                fill="none" stroke={color} strokeWidth={Math.max(1, 3 * zoomScale)}
+                strokeLinecap="round" strokeLinejoin="round" />
+              <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
+                fill="rgba(58,123,213,0.18)" />
+            </g>
           );
         })}
 
@@ -771,17 +770,31 @@ function App() {
           const firstSel = selIds.size > 0 ? gameState.groups.find(g => selIds.has(g.id)) : null;
           const isUnionDrag = !firstSel || firstSel.owner === 1;
           const arrowColor = isUnionDrag ? 'rgba(58,123,213,0.9)' : 'rgba(192,57,43,0.9)';
-          const markerId = isUnionDrag ? 'arrow-union' : 'arrow-confed';
+          const fillColor = isUnionDrag ? '#3a7bd5' : '#c0392b';
           const pts = dragState.points;
           const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+          // Compute arrowhead from last two points
+          const last = pts[pts.length - 1];
+          const prev = pts[pts.length - 2];
+          const dx = last.x - prev.x;
+          const dy = last.y - prev.y;
+          const len = Math.hypot(dx, dy);
+          const ux = len > 0 ? dx / len : 1, uy = len > 0 ? dy / len : 0;
+          const aw = Math.max(5, 10 * zoomScale);
+          const ah = Math.max(8, 16 * zoomScale);
+          const tip = last;
+          const base1 = { x: tip.x - ux * ah + uy * aw, y: tip.y - uy * ah - ux * aw };
+          const base2 = { x: tip.x - ux * ah - uy * aw, y: tip.y - uy * ah + ux * aw };
           return (
-            <path d={d}
-              fill="none" stroke={arrowColor} strokeWidth={Math.max(1, 4 * zoomScale)}
-              strokeLinecap="round" strokeLinejoin="round"
-              markerEnd={`url(#${markerId})`}
-              pointerEvents="none" />
+            <g pointerEvents="none">
+              <path d={d}
+                fill="none" stroke={arrowColor} strokeWidth={Math.max(1, 4 * zoomScale)}
+                strokeLinecap="round" strokeLinejoin="round" />
+              <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
+                fill={fillColor} />
+            </g>
           );
-        })()}
+        })()}}
 
         {/* Selection Box */}
         {dragState?.type === 'box' && (
