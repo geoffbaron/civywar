@@ -49,24 +49,24 @@ export default function MapBackground({ battlefield, tileLayer = 'none', mapStyl
     }
 
     // ─── Terrain type → display config ───
-    // OUR terrain data painted in watercolor style directly on parchment.
-    // This IS the map. What you see = what affects gameplay.
-    // Warm, saturated watercolor-wash fills with soft organic feel.
+    // Watercolor washes on bright parchment. Terrain IS the map.
+    // Colors are vivid enough to read against warm tan paper.
+    // Reference: Civil War era hand-painted military maps.
     const TERRAIN_STYLES = {
-      forest:      { color: '#7a9e55', fillColor: '#8db86a', opacity: 0.65, weight: 0.4, icon: '🌲', label: 'Woods' },
-      hill:        { color: '#c4a65a', fillColor: '#d8be78', opacity: 0.50, weight: 0.4, icon: '⛰', label: 'High Ground' },
-      sunken_road: { color: '#a08048', fillColor: '#c0a060', opacity: 0.50, weight: 1.5, icon: '🛤', label: 'Sunken Road' },
-      river:       { color: '#5a98c0', fillColor: '#78b8e0', opacity: 0.70, weight: 0.6, icon: '🌊', label: 'River' },
-      creek:       { color: '#68a8c8', fillColor: '#88c8e8', opacity: 0.60, weight: 0.4, icon: '💧', label: 'Creek' },
-      marsh:       { color: '#7aaa80', fillColor: '#98c8a0', opacity: 0.45, weight: 0.3, icon: '🏚', label: 'Marsh' },
-      wheat:       { color: '#d0b848', fillColor: '#e8d468', opacity: 0.45, weight: 0.3, icon: '🌾', label: 'Wheat Field' },
-      orchard:     { color: '#80a858', fillColor: '#9cc870', opacity: 0.55, weight: 0.4, icon: '🍎', label: 'Orchard' },
-      road:        { color: '#b09868', fillColor: '#c8b888', opacity: 0.35, weight: 1.2, icon: '🛣', label: 'Road' },
-      bridge:      { color: '#a08848', fillColor: '#c0a868', opacity: 0.50, weight: 1.5, icon: '🌉', label: 'Bridge' },
-      building:    { color: '#907868', fillColor: '#a89888', opacity: 0.60, weight: 0.8, icon: '🏠', label: 'Building' },
-      fence_stone: { color: '#887868', fillColor: '#a09888', opacity: 0.35, weight: 1.8, dash: '5,3', icon: '🧱', label: 'Stone Wall' },
-      fence_wood:  { color: '#a09070', fillColor: '#b8a888', opacity: 0.25, weight: 1.2, dash: '4,4', icon: '🪵', label: 'Fence' },
-      trench:      { color: '#887048', fillColor: '#a89060', opacity: 0.40, weight: 1.0, icon: '⚒', label: 'Trench' },
+      forest:      { color: '#5a8a40', fillColor: '#82b868', opacity: 0.38, weight: 0, icon: '🌲', label: 'Woods' },
+      hill:        { color: '#c8b060', fillColor: '#daca80', opacity: 0.30, weight: 0, icon: '⛰', label: 'High Ground' },
+      sunken_road: { color: '#8a7050', fillColor: '#b09868', opacity: 0.40, weight: 1.5, icon: '🛤', label: 'Sunken Road' },
+      river:       { color: '#3080a8', fillColor: '#48a0c8', opacity: 0.65, weight: 0.5, icon: '🌊', label: 'River' },
+      creek:       { color: '#3888b0', fillColor: '#58a8c8', opacity: 0.55, weight: 0.3, icon: '💧', label: 'Creek' },
+      marsh:       { color: '#5a9a60', fillColor: '#78b878', opacity: 0.35, weight: 0, icon: '🏚', label: 'Marsh' },
+      wheat:       { color: '#c8a830', fillColor: '#e0c850', opacity: 0.30, weight: 0, icon: '🌾', label: 'Wheat Field' },
+      orchard:     { color: '#4a8830', fillColor: '#68a848', opacity: 0.40, weight: 0, icon: '🍎', label: 'Orchard' },
+      road:        { color: '#907848', fillColor: '#a89060', opacity: 0.30, weight: 1.2, icon: '🛣', label: 'Road' },
+      bridge:      { color: '#887040', fillColor: '#a88850', opacity: 0.50, weight: 1.5, icon: '🌉', label: 'Bridge' },
+      building:    { color: '#605040', fillColor: '#887060', opacity: 0.55, weight: 0.8, icon: '🏠', label: 'Building' },
+      fence_stone: { color: '#605040', fillColor: '#887060', opacity: 0.25, weight: 1.8, dash: '5,3', icon: '🧱', label: 'Stone Wall' },
+      fence_wood:  { color: '#907858', fillColor: '#a89070', opacity: 0.20, weight: 1.2, dash: '4,4', icon: '🪵', label: 'Fence' },
+      trench:      { color: '#605030', fillColor: '#887848', opacity: 0.35, weight: 1.0, icon: '⚒', label: 'Trench' },
     };
 
     // Initialize an empty tactical terrain overlay layer
@@ -198,7 +198,7 @@ export default function MapBackground({ battlefield, tileLayer = 'none', mapStyl
   }, [showTacticalOverlay, mapInstance]);
 
   const filterStyles = {
-    vintage: { filter: 'sepia(0.25) saturate(0.8) brightness(1.0) contrast(1.02)' },
+    vintage: { filter: 'sepia(0.15) saturate(0.9) brightness(1.05) contrast(1.0)' },
     warm: { filter: 'sepia(0.15) saturate(0.85) brightness(1.02)' },
     parchment: { filter: 'sepia(0.45) saturate(0.55) brightness(0.95) contrast(1.05)' },
     natural: { filter: 'none' },

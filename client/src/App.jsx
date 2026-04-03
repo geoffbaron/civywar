@@ -26,6 +26,7 @@ function App() {
   const [dragState, setDragState] = useState(null);
   const [victory, setVictory] = useState(0);
   const [hoverInfo, setHoverInfo] = useState(null);
+  const [hoverUnit, setHoverUnit] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [currentBattle, setCurrentBattle] = useState('antietam');
@@ -349,6 +350,29 @@ function App() {
         setDragState(prev => prev ? { ...prev, mouseX: pos.x, mouseY: pos.y } : null);
       }
     }
+    // Unit hover — check if mouse is over any visible unit
+    if (!dragState) {
+      const hitRadius = 18 * zoomScale;
+      let foundUnit = null;
+      for (const g of gameState.groups) {
+        if (g.count <= 0) continue;
+        if (g.owner !== 1 && !g.visible) continue; // fog of war
+        const dx = pos.x - g.x, dy = pos.y - g.y;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
+          foundUnit = g;
+          break;
+        }
+      }
+      if (foundUnit) {
+        const terrain = engine.getTerrainAt(foundUnit.x, foundUnit.y);
+        setHoverUnit({ group: foundUnit, x: pos.x, y: pos.y, terrain });
+        setHoverInfo(null);
+        return; // skip terrain hover when over a unit
+      } else {
+        if (hoverUnit) setHoverUnit(null);
+      }
+    }
+
     // Terrain hover when tactical overlay is visible and not dragging
     if (showTacticalOverlay && !dragState && pixelToLatLngRef.current && transformedGeoTerrain) {
       const loc = pixelToLatLngRef.current(pos.x, pos.y);
@@ -636,11 +660,18 @@ function App() {
           const sightRadii = fg.map(g => {
             let sight = engine.getSightRange(g.unitType);
             const t = engine.getTerrainAt(g.x, g.y);
-            if (t.label === 'High Ground') sight *= 1.5;
-            if (t.label === 'Woods') sight *= 0.4;
+            // Match engine's computeVisibility observer modifiers
+            if (t.label === 'High Ground') {
+              sight *= g.unitType === 'commander' ? 2.0
+                     : g.unitType === 'cannon' ? 1.8
+                     : g.unitType === 'cavalry' ? 1.6
+                     : 1.5;
+            }
+            if (t.label === 'Woods') sight *= 0.35;
             if (t.label === 'Building') sight *= 0.5;
-            if (t.label === 'Marsh') sight *= 0.6;
-            if (t.label === 'Creek' || t.label === 'Sunken Road') sight *= 0.65;
+            if (t.label === 'Marsh') sight *= 0.5;
+            if (t.label === 'Creek' || t.label === 'Sunken Road') sight *= 0.55;
+            if (t.label === 'Road') sight *= 1.1;
             return sight * zoomScale;
           });
           return (
@@ -651,7 +682,8 @@ function App() {
                   return (
                     <radialGradient key={`rg-${g.id}`} id={`rg-${g.id}`}
                       cx={g.x} cy={g.y} r={r} gradientUnits="userSpaceOnUse">
-                      <stop offset="65%" stopColor="black" stopOpacity="1" />
+                      <stop offset="50%" stopColor="black" stopOpacity="1" />
+                      <stop offset="80%" stopColor="black" stopOpacity="0.4" />
                       <stop offset="100%" stopColor="black" stopOpacity="0" />
                     </radialGradient>
                   );
@@ -669,7 +701,7 @@ function App() {
                 </mask>
               </defs>
               <rect x={-mapWidth} y={-mapHeight} width={mapWidth * 3} height={mapHeight * 3}
-                fill="rgba(8,6,4,0.65)" mask="url(#fog-mask)"
+                fill="rgba(15,12,8,0.50)" mask="url(#fog-mask)"
                 pointerEvents="none" />
             </>
           );
@@ -1125,6 +1157,72 @@ function App() {
                   {stats.map((s, i) => {
                     const color = s.label === 'Impassable' ? '#ef8855' : (s.pct > 0 ? '#8ddf6a' : '#ef8855');
                     return <tspan key={i} fill={color}>{i > 0 ? '  ' : ''}{s.label === 'Impassable' ? 'Impassable' : `${s.label} ${s.pct > 0 ? '+' : ''}${s.pct}%`}</tspan>;
+                  })}
+                </text>
+              )}
+            </g>
+          );
+        })()}
+
+        {/* Unit hover tooltip */}
+        {hoverUnit && !dragState && (() => {
+          const g = hoverUnit.group;
+          const t = hoverUnit.terrain;
+          const isUnion = g.owner === 1;
+          const side = isUnion ? 'Union' : 'CSA';
+          const typeLabel = { infantry: 'Infantry', cavalry: 'Cavalry', cannon: 'Artillery', commander: 'Commander' }[g.unitType] || g.unitType;
+          const typeIcon = { infantry: '⚔', cavalry: '♞', cannon: '☉', commander: '⭐' }[g.unitType] || '';
+          const morale = Math.round(g.morale || 0);
+          const moraleColor = morale > 60 ? '#8ddf6a' : morale > 30 ? '#e8c44a' : '#ef8855';
+          const count = Math.ceil(g.count);
+
+          // Terrain bonuses
+          const stats = [];
+          if (t) {
+            if (t.speed !== 1.0) stats.push({ label: 'Spd', pct: Math.round((t.speed - 1) * 100) });
+            if (t.defense !== 1.0) stats.push({ label: 'Def', pct: Math.round((t.defense - 1) * 100) });
+            if (t.offense !== 1.0) stats.push({ label: 'Atk', pct: Math.round((t.offense - 1) * 100) });
+          }
+
+          const range = engine.getRange(g.unitType);
+          const sight = engine.getSightRange(g.unitType);
+          const titleText = `${typeIcon} ${g.label || typeLabel}`;
+          const detailText = `${side} — ${count} men  |  Range ${range}  |  Sight ${sight}`;
+          const boxW = Math.max(titleText.length * 7, detailText.length * 5.2, 160);
+          const boxH = 58 + (stats.length ? 13 : 0);
+          const tx = Math.min(hoverUnit.x, mapWidth - boxW / 2 - 5);
+          const ty = hoverUnit.y - boxH - 14;
+
+          return (
+            <g pointerEvents="none">
+              <rect x={tx - boxW / 2} y={ty} width={boxW} height={boxH} rx={4}
+                fill="rgba(15,12,8,0.92)" stroke={isUnion ? 'rgba(74,120,187,0.6)' : 'rgba(192,48,48,0.6)'} strokeWidth={1} />
+              {/* Title */}
+              <text x={tx} y={ty + 13} textAnchor="middle" fill={isUnion ? '#6699dd' : '#ee7755'}
+                fontSize="11" fontFamily="'Georgia', serif" fontWeight="bold">
+                {titleText}
+              </text>
+              {/* Side + count */}
+              <text x={tx} y={ty + 26} textAnchor="middle" fill="#ccc"
+                fontSize="9" fontFamily="'Georgia', serif">
+                {side} — {count} men  |  Range {range}  |  Sight {sight}
+              </text>
+              {/* Morale bar */}
+              <rect x={tx - boxW / 2 + 8} y={ty + 32} width={boxW - 16} height={5} rx={2}
+                fill="rgba(255,255,255,0.1)" />
+              <rect x={tx - boxW / 2 + 8} y={ty + 32} width={Math.max(0, (boxW - 16) * morale / 100)} height={5} rx={2}
+                fill={moraleColor} />
+              <text x={tx} y={ty + 47} textAnchor="middle" fill={moraleColor}
+                fontSize="8.5" fontFamily="'Georgia', serif">
+                Morale {morale}%{g.isBroken ? ' — BROKEN' : ''}
+              </text>
+              {/* Terrain bonuses */}
+              {stats.length > 0 && (
+                <text x={tx} y={ty + 57} textAnchor="middle"
+                  fontSize="8" fontFamily="'Georgia', serif">
+                  {stats.map((s, i) => {
+                    const color = s.pct > 0 ? '#8ddf6a' : '#ef8855';
+                    return <tspan key={i} fill={color}>{i > 0 ? '  ' : ''}{s.label} {s.pct > 0 ? '+' : ''}{s.pct}%</tspan>;
                   })}
                 </text>
               )}

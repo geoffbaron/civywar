@@ -183,7 +183,16 @@ body, html {
   z-index: 0;
 }
 .map-background .leaflet-container {
-  background: #e8dcc0; /* warm parchment — visible where tiles haven't loaded */
+  /* Warm parchment with radial variation — mimics aged Civil War map paper */
+  background:
+    radial-gradient(ellipse at 30% 25%, rgba(235, 220, 190, 0.4) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 65%, rgba(225, 210, 180, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(240, 228, 200, 0.3) 0%, transparent 65%),
+    linear-gradient(145deg, #f0e4cc 0%, #ecdcbe 25%, #e8d8b8 50%, #f0e2c8 75%, #ecdcc0 100%);
+}
+/* Soften polygon edges for a painted watercolor feel */
+.map-background .leaflet-overlay-pane svg {
+  filter: blur(0.4px);
 }
 
 /* SVG game overlay — sits on top of the Leaflet map */

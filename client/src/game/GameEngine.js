@@ -178,8 +178,12 @@ export class GameEngine {
   }
 
   // Sight range for fog-of-war (how far each unit can DETECT enemies)
+  // Cavalry were the eyes of the army — scouts, vedettes, picket lines.
+  // Commanders had staff officers and signal stations for observation.
+  // Cannons had forward observers but limited organic scouting.
+  // Infantry relied on skirmish lines pushed ahead of the main body.
   getSightRange(unitType) {
-    return { infantry: 160, cavalry: 320, cannon: 140, commander: 220 }[unitType] || 160;
+    return { infantry: 180, cavalry: 400, cannon: 200, commander: 300 }[unitType] || 160;
   }
 
   // Morale aura radius for commander
@@ -242,38 +246,84 @@ export class GameEngine {
     return base * mult;
   }
 
-  // Compute which enemy groups are visible to a given owner
+  // Compute which enemy groups are visible to a given owner.
+  // Civil War fog-of-war: generals had very limited intelligence.
+  // Cavalry scouts, signal stations, and elevated observation posts
+  // were the primary means of detecting enemy positions.
+  // Dense terrain (Wilderness, woods) could hide entire corps.
   computeVisibility(owner) {
     const friendly = this.groups.filter(g => g.owner === owner && g.count > 0);
     const enemies  = this.groups.filter(g => g.owner !== owner && g.count > 0);
     for (const e of enemies) {
-      // Firing units reveal themselves regardless of fog
+      // Firing units reveal themselves (muzzle flash, smoke, sound)
       if (e.fireTimer > 0) {
         e.visible = true;
         continue;
       }
-      if (e.visible) continue; // Already visible from other owner's calculation
+      // Re-evaluate every frame — units in woods can disappear when observers move away
       e.visible = friendly.some(f => {
         let sight = this.getSightRange(f.unitType);
-        
-        // Terrain visibility modifiers for the OBSERVER
-        const fTerrain = this.getTerrainAt(f.x, f.y);
-        // High ground gives significant visibility boost
-        if (fTerrain.label === 'High Ground') sight *= 1.5;
-        // Cannot see far out of woods/buildings
-        if (fTerrain.label === 'Woods') sight *= 0.4;
-        if (fTerrain.label === 'Building') sight *= 0.5;
-        // Low areas reduce visibility
-        if (fTerrain.label === 'Marsh') sight *= 0.6;
-        if (fTerrain.label === 'Creek' || fTerrain.label === 'Sunken Road') sight *= 0.65;
 
-        // Terrain visibility modifiers for the TARGET
+        // ── OBSERVER terrain modifiers ──
+        const fTerrain = this.getTerrainAt(f.x, f.y);
+
+        // High ground: commanding view of the battlefield
+        // Historically, signal stations and observation posts were placed on hills.
+        // From Cemetery Hill, Union could see Confederate movements across the valley.
+        if (fTerrain.label === 'High Ground') {
+          sight *= f.unitType === 'commander' ? 2.0  // signal station + staff
+                 : f.unitType === 'cannon' ? 1.8     // artillery observer
+                 : f.unitType === 'cavalry' ? 1.6    // mounted vedette on hilltop
+                 : 1.5;                               // infantry pickets
+        }
+
+        // Woods severely limit observation — the Wilderness at Chancellorsville
+        // hid Jackson's entire corps on his flank march
+        if (fTerrain.label === 'Woods') sight *= 0.35;
+        if (fTerrain.label === 'Building') sight *= 0.5;
+
+        // Low terrain — limited sightlines
+        if (fTerrain.label === 'Marsh') sight *= 0.5;
+        if (fTerrain.label === 'Creek' || fTerrain.label === 'Sunken Road') sight *= 0.55;
+
+        // Roads give slightly better observation (cleared sightlines)
+        if (fTerrain.label === 'Road') sight *= 1.1;
+
+        // ── TARGET terrain modifiers (concealment) ──
         const eTerrain = this.getTerrainAt(e.x, e.y);
-        // Targets hiding in woods/buildings are harder to spot
-        if (eTerrain.label === 'Woods') sight *= 0.5;
-        if (eTerrain.label === 'Building') sight *= 0.6;
-        // Targets in low areas are harder to see
-        if (eTerrain.label === 'Marsh' || eTerrain.label === 'Sunken Road') sight *= 0.7;
+
+        // Woods provide excellent concealment — troops can hide entire divisions
+        if (eTerrain.label === 'Woods') sight *= 0.4;
+        if (eTerrain.label === 'Building') sight *= 0.55;
+
+        // Low terrain hides troops from view
+        if (eTerrain.label === 'Sunken Road') sight *= 0.5;  // Bloody Lane was invisible until close
+        if (eTerrain.label === 'Marsh') sight *= 0.6;
+        if (eTerrain.label === 'Creek') sight *= 0.65;
+
+        // High ground targets are visible from further away (silhouetted on ridge)
+        if (eTerrain.label === 'High Ground') sight *= 1.2;
+
+        // ── TARGET behavior modifiers ──
+        // Moving troops are easier to spot (dust clouds, noise, visible columns)
+        if (e.isMoving) sight *= 1.3;
+
+        // Large formations are visible from further away
+        if (e.count > 50) sight *= 1.15;
+        else if (e.count < 20) sight *= 0.85;
+
+        // Broken/routing troops are loud and visible (fleeing in disorder)
+        if (e.isBroken) sight *= 1.4;
+
+        // Engaged troops produce smoke and noise — easier to locate
+        if (e.isEngaged) sight *= 1.25;
+
+        // ── OBSERVER on high ground partially negates target's woods concealment ──
+        // From an elevated position you can see troop movements in forest clearings,
+        // dust from columns, smoke from campfires. Not full visibility, but better.
+        if (fTerrain.label === 'High Ground' && eTerrain.label === 'Woods') {
+          sight *= 1.5; // partially compensate for the 0.4 woods penalty
+        }
 
         return Math.hypot(f.x - e.x, f.y - e.y) < sight;
       });
@@ -346,7 +396,17 @@ export class GameEngine {
       const centerLat = this.centerLat || 39.46;
       // Calculate speed dynamically based on map properties
       const baseSpeedAndScale = this.getBaseSpeed(g.unitType, currentZoom, centerLat);
-      const effectiveSpeed = baseSpeedAndScale * terrain.speed;
+
+      // Climbing penalty: moving INTO a hill from non-hill terrain is extra slow
+      // (descending or already on the hill uses normal hill speed)
+      let speedMult = terrain.speed;
+      const destTerrain = this.getTerrainAt(g.x + (dx / dist) * 15, g.y + (dy / dist) * 15);
+      if (destTerrain.label === 'High Ground' && terrain.label !== 'High Ground') {
+        // Climbing uphill — much slower, cannons nearly immobile going uphill
+        speedMult = g.unitType === 'cannon' ? 0.2 : 0.4;
+      }
+
+      const effectiveSpeed = baseSpeedAndScale * speedMult;
       const moveDist = effectiveSpeed * dt;
 
       // Smooth rotation: low-pass filter toward movement direction
@@ -435,8 +495,15 @@ export class GameEngine {
         const bTerrain = this.getTerrainAt(b.x, b.y);
 
         // Stationary units are far more effective than moving ones
-        const aAcc = a.isMoving ? 0.55 : 1.2;
-        const bAcc = b.isMoving ? 0.55 : 1.2;
+        // Moving cavalry is harder to hit; moving infantry moderately so
+        const movingPenalty = (shooter, target) => {
+          if (!target.isMoving) return 1.2; // stationary bonus
+          if (target.unitType === 'cavalry') return 0.25; // cavalry at gallop = nearly impossible to hit
+          if (target.unitType === 'infantry') return 0.5;
+          return 0.55;
+        };
+        const aAcc = movingPenalty(a, b);
+        const bAcc = movingPenalty(b, a);
 
         const aMorale = Math.max(0.1, (a.morale || 100) / 100);
         const bMorale = Math.max(0.1, (b.morale || 100) / 100);
@@ -478,13 +545,50 @@ export class GameEngine {
 
         const typeMult = { infantry: 1.0, cavalry: 0.85, cannon: 1.3, commander: 0 };
 
-        // Cannons are much less effective against moving targets
-        const cannonVsMoving = (attacker, target) =>
-          (attacker.unitType === 'cannon' && target.isMoving) ? 0.2 : 1.0;
+        // Cannons are devastating vs stationary targets but nearly useless vs moving ones
+        // Round shot/canister was aimed at fixed positions; hitting a moving column was rare
+        const cannonVsMoving = (attacker, target) => {
+          if (attacker.unitType !== 'cannon') return 1.0;
+          if (!target.isMoving) return 1.0;
+          if (target.unitType === 'cavalry') return 0.06; // galloping cavalry = nearly immune to cannon
+          return 0.12; // moving infantry still very hard to hit with cannon
+        };
 
-        // Cannon accuracy drops off at longer ranges (1.0 at close, 0.3 at max range)
+        // Cannon accuracy drops sharply at range (1.0 at close, 0.15 at max range)
+        // Smoothbore cannon effective range was ~400 yards; beyond that, mostly harassment
         const cannonRangeFalloff = (attacker, range) =>
-          attacker.unitType === 'cannon' ? Math.max(0.3, 1.0 - 0.7 * (dist / range)) : 1.0;
+          attacker.unitType === 'cannon' ? Math.max(0.15, 1.0 - 0.85 * (dist / range)) : 1.0;
+
+        // Infantry/cavalry effectiveness also drops at range but less severely
+        const smallArmsRangeFalloff = (attacker, range) => {
+          if (attacker.unitType === 'cannon' || attacker.unitType === 'commander') return 1.0;
+          const ratio = dist / range;
+          return Math.max(0.4, 1.0 - 0.6 * ratio); // muskets deadly at close range, weak at max
+        };
+
+        // ── Melee overrun: cannons are nearly helpless at close range ──
+        // Historically, artillery caught in melee was quickly spiked/captured.
+        const MELEE_RANGE = 35; // close-combat distance in pixels
+
+        // Cannons deal almost no damage at point-blank (crew panics, can't aim)
+        const cannonMeleeImpotence = (attacker, range) =>
+          (attacker.unitType === 'cannon' && dist < MELEE_RANGE) ? 0.1 : 1.0;
+
+        // Troops overrunning cannons deal massive bonus damage
+        const meleeVsCannon = (attacker, defender) => {
+          if (defender.unitType !== 'cannon' || dist >= MELEE_RANGE) return 1.0;
+          if (attacker.unitType === 'cavalry') return 5.0;  // cavalry saber charge
+          if (attacker.unitType === 'infantry') return 3.5;  // bayonet charge
+          return 1.0;
+        };
+
+        // Cannons suffer heavy morale shock when enemies reach melee range
+        if (a.unitType === 'cannon' && b.unitType !== 'cannon' && dist < MELEE_RANGE) {
+          a.morale -= 15 * dt; // crew panics
+        }
+        if (b.unitType === 'cannon' && a.unitType !== 'cannon' && dist < MELEE_RANGE) {
+          b.morale -= 15 * dt;
+        }
 
         // Also require enemy to be visible (within sight range of any friendly)
         const aCanSee = this.groups.filter(f => f.owner === a.owner)
@@ -498,11 +602,15 @@ export class GameEngine {
         const bIgnoresWoodsDef = b.unitType === 'cannon' && bTerrain.label === 'High Ground'
           && (aTerrain.label === 'Woods' || aTerrain.label === 'Forest');
 
-        if (aCanFire && aCanSee && dist < aRange) {
+        // In melee range, troops can attack cannons even while moving (bayonet/saber charge)
+        const aCanMelee = !a.isBroken && a.unitType !== 'cannon' && b.unitType === 'cannon' && dist < MELEE_RANGE;
+        const bCanMelee = !b.isBroken && b.unitType !== 'cannon' && a.unitType === 'cannon' && dist < MELEE_RANGE;
+
+        if ((aCanFire && aCanSee && dist < aRange) || aCanMelee) {
           const defB = aIgnoresWoodsDef ? 1.0 : bTerrain.defense;
-          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b) * cannonRangeFalloff(a, aRange);
+          const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b) * cannonRangeFalloff(a, aRange) * smallArmsRangeFalloff(a, aRange) * cannonMeleeImpotence(a, aRange) * meleeVsCannon(a, b);
           b.count -= aDps * dt;
-          b.morale -= 3 * dt;  // b is under fire
+          b.morale -= (aCanMelee ? 8 : 3) * dt;  // melee is terrifying
           a.isEngaged = true;
           a.targetId = b.id;
           if (!a.lastFired || this.time - a.lastFired > 4000 + Math.random() * 3000) {
@@ -511,11 +619,11 @@ export class GameEngine {
             a.fireTimer = 0.3; // Volley flash duration (300ms)
           }
         }
-        if (bCanFire && bCanSee && dist < bRange) {
+        if ((bCanFire && bCanSee && dist < bRange) || bCanMelee) {
           const defA = bIgnoresWoodsDef ? 1.0 : aTerrain.defense;
-          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a) * cannonRangeFalloff(b, bRange);
+          const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a) * cannonRangeFalloff(b, bRange) * smallArmsRangeFalloff(b, bRange) * cannonMeleeImpotence(b, bRange) * meleeVsCannon(b, a);
           a.count -= bDps * dt;
-          a.morale -= 3 * dt;  // a is under fire
+          a.morale -= (bCanMelee ? 8 : 3) * dt;
           b.isEngaged = true;
           b.targetId = a.id;
           if (!b.lastFired || this.time - b.lastFired > 4000 + Math.random() * 3000) {

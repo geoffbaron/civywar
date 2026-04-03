@@ -59,10 +59,14 @@ const TAG_MAP = [
   { match: (tags) => tags.barrier === 'wall' || tags.barrier === 'stone_wall' || tags.barrier === 'retaining_wall', type: 'fence_stone', priority: 85 },
   { match: (tags) => tags.barrier === 'fence' || tags.barrier === 'hedge' || tags.barrier === 'city_wall', type: 'fence_wood', priority: 84 },
 
-  // Roads
+  // Hills / ridges / elevated terrain
+  { match: (tags) => tags.natural === 'ridge', type: 'hill', priority: 75, bufferMeters: 80 },
+  { match: (tags) => tags.natural === 'peak' || tags.natural === 'hill', type: 'hill', priority: 74, bufferMeters: 120 },
+  { match: (tags) => tags.natural === 'cliff' || tags.natural === 'escarpment', type: 'hill', priority: 73, bufferMeters: 40 },
+
+  // Roads — only major/historic roads, skip modern residential/service/cul-de-sacs
   { match: (tags) => ['motorway','trunk','primary','secondary','tertiary'].includes(tags.highway), type: 'road', priority: 70, bufferMeters: 8 },
-  { match: (tags) => ['residential','unclassified','service'].includes(tags.highway), type: 'road', priority: 69, bufferMeters: 5 },
-  { match: (tags) => ['track','path'].includes(tags.highway), type: 'road', priority: 68, bufferMeters: 3 },
+  { match: (tags) => tags.highway === 'track', type: 'road', priority: 68, bufferMeters: 3 },
 
   // Farmland
   { match: (tags) => tags.landuse === 'farmland' || tags.landuse === 'farmyard', type: 'wheat', priority: 40 },
@@ -94,6 +98,14 @@ function buildQuery(bounds) {
   // Water bodies
   way["natural"="water"](${bbox});
   relation["natural"="water"](${bbox});
+
+  // Hills, ridges, peaks, cliffs
+  node["natural"="peak"](${bbox});
+  node["natural"="hill"](${bbox});
+  way["natural"="ridge"](${bbox});
+  way["natural"="cliff"](${bbox});
+  way["natural"="escarpment"](${bbox});
+  relation["natural"="ridge"](${bbox});
 
   // Roads
   way["highway"](${bbox});
@@ -218,8 +230,23 @@ function convertToTerrain(osmData, bounds) {
       }
     }
 
-    // Skip Point/MultiPoint features
-    if (geometry.type === 'Point' || geometry.type === 'MultiPoint') continue;
+    // Buffer Point features (peaks, hills) into circles
+    if (geometry.type === 'Point' || geometry.type === 'MultiPoint') {
+      if (matched.bufferMeters) {
+        try {
+          const buffered = buffer(feat, matched.bufferMeters, { units: 'meters', steps: 16 });
+          if (buffered) {
+            geometry = buffered.geometry;
+          } else {
+            continue;
+          }
+        } catch (e) {
+          continue;
+        }
+      } else {
+        continue;
+      }
+    }
 
     // Filter tiny buildings (modern houses, sheds) — keep only significant structures
     if (matched.type === 'building') {
@@ -227,9 +254,9 @@ function convertToTerrain(osmData, bounds) {
       if (area < 0.0000001) continue; // ~100 sq meters at this latitude
     }
 
-    // Skip minor roads (footways, cycleways, steps, service roads to houses)
-    if (allTags.highway === 'footway' || allTags.highway === 'cycleway' ||
-        allTags.highway === 'steps' || allTags.highway === 'pedestrian') continue;
+    // Skip modern/minor roads — keep only historically-plausible routes
+    if (['footway','cycleway','steps','pedestrian','residential',
+         'unclassified','service','living_street','path'].includes(allTags.highway)) continue;
 
     // Simplify complex polygons
     try {
