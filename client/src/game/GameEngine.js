@@ -40,6 +40,7 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
+    this.smokes = [];
 
     for (const u of units) {
       this.groups.push({
@@ -86,6 +87,7 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
+    this.smokes = [];
 
     for (const u of STARTING_UNITS) {
       this.groups.push({
@@ -339,9 +341,20 @@ export class GameEngine {
     const dt = Math.min(deltaMs / 1000, 0.1);
     this.time = (this.time || 0) + deltaMs;
 
+    if (!this.smokes) this.smokes = [];
+    for (let i = this.smokes.length - 1; i >= 0; i--) {
+      const s = this.smokes[i];
+      s.life -= dt;
+      s.x += s.dx * dt;
+      s.y += s.dy * dt;
+      s.r += dt * 3;
+      if (s.life <= 0) this.smokes.splice(i, 1);
+    }
+
     // Reset visual engagement state
     for (const g of this.groups) {
       g.isEngaged = false;
+      g.justMeleed = false;
       g.targetId = null;
       g.justFired = false;
       if (g.fireTimer > 0) g.fireTimer -= dt;
@@ -613,10 +626,26 @@ export class GameEngine {
           b.morale -= (aCanMelee ? 8 : 3) * dt;  // melee is terrifying
           a.isEngaged = true;
           a.targetId = b.id;
-          if (!a.lastFired || this.time - a.lastFired > 4000 + Math.random() * 3000) {
+          const aFireDelay = aCanMelee ? 800 : (a.isMoving ? (1000 + Math.random() * 1500) : (4000 + Math.random() * 3000));
+          if (!a.lastFired || this.time - a.lastFired > aFireDelay) {
             a.lastFired = this.time;
-            a.justFired = true;
-            a.fireTimer = 0.3; // Volley flash duration (300ms)
+            a.justMeleed = aCanMelee;
+            a.justFired = !aCanMelee;
+            a.fireTimer = a.isMoving ? 0.1 : 0.3; // Volley flash duration
+            
+            if (!aCanMelee) {
+              for (let k = 0; k < (a.unitType === 'cannon' ? 5 : 3); k++) {
+                this.smokes.push({
+                  x: a.x + (Math.random() - 0.5) * 20,
+                  y: a.y + (Math.random() - 0.5) * 20,
+                  life: Math.random() * 2.0 + 3.0,
+                  maxLife: 5.0,
+                  r: Math.random() * 8 + 4,
+                  dx: (Math.random() - 0.5) * 8,
+                  dy: -Math.random() * 10 - 5
+                });
+              }
+            }
           }
         }
         if ((bCanFire && bCanSee && dist < bRange) || bCanMelee) {
@@ -626,10 +655,26 @@ export class GameEngine {
           a.morale -= (bCanMelee ? 8 : 3) * dt;
           b.isEngaged = true;
           b.targetId = a.id;
-          if (!b.lastFired || this.time - b.lastFired > 4000 + Math.random() * 3000) {
+          const bFireDelay = bCanMelee ? 800 : (b.isMoving ? (1000 + Math.random() * 1500) : (4000 + Math.random() * 3000));
+          if (!b.lastFired || this.time - b.lastFired > bFireDelay) {
             b.lastFired = this.time;
-            b.justFired = true;
-            b.fireTimer = 0.3; // Volley flash duration (300ms)
+            b.justMeleed = bCanMelee;
+            b.justFired = !bCanMelee;
+            b.fireTimer = b.isMoving ? 0.1 : 0.3; // Volley flash duration
+
+            if (!bCanMelee) {
+              for (let k = 0; k < (b.unitType === 'cannon' ? 5 : 3); k++) {
+                this.smokes.push({
+                  x: b.x + (Math.random() - 0.5) * 20,
+                  y: b.y + (Math.random() - 0.5) * 20,
+                  life: Math.random() * 2.0 + 3.0,
+                  maxLife: 5.0,
+                  r: Math.random() * 8 + 4,
+                  dx: (Math.random() - 0.5) * 8,
+                  dy: -Math.random() * 10 - 5
+                });
+              }
+            }
           }
         }
 

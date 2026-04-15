@@ -331,49 +331,49 @@ export const MAP_LABELS = [
 // ─── 3 Flags per side, 6 total ───
 export const FORTS = [
   // Union (north) — positions behind the battle line
-  { id: 'u1', x: 200,  y: 30,  owner: 1, garrison: 30, rate: 2.0, label: 'I Corps (Hooker)' },
-  { id: 'u2', x: 760,  y: 20,  owner: 1, garrison: 40, rate: 2.5, label: 'II Corps (Sumner)' },
-  { id: 'u3', x: 1350, y: 40,  owner: 1, garrison: 30, rate: 2.0, label: 'IX Corps (Burnside)' },
+  { id: 'u1', x: 200,  y: 10,  owner: 1, garrison: 30, rate: 2.0, label: 'I Corps (Hooker)' },
+  { id: 'u2', x: 760,  y: 10,  owner: 1, garrison: 40, rate: 2.5, label: 'II Corps (Sumner)' },
+  { id: 'u3', x: 1350, y: 10,  owner: 1, garrison: 30, rate: 2.0, label: 'IX Corps (Burnside)' },
 
   // Confederate (south)
-  { id: 'c1', x: 200,  y: 960, owner: 2, garrison: 25, rate: 1.8, label: 'Jackson' },
-  { id: 'c2', x: 700,  y: 975, owner: 2, garrison: 35, rate: 2.2, label: 'Lee HQ' },
-  { id: 'c3', x: 1300, y: 960, owner: 2, garrison: 25, rate: 1.8, label: 'Toombs' },
+  { id: 'c1', x: 200,  y: 990, owner: 2, garrison: 25, rate: 1.8, label: 'Jackson' },
+  { id: 'c2', x: 700,  y: 990, owner: 2, garrison: 35, rate: 2.2, label: 'Lee HQ' },
+  { id: 'c3', x: 1300, y: 990, owner: 2, garrison: 25, rate: 1.8, label: 'Toombs' },
 ];
 
 // ─── Pre-positioned battle lines ───
 export const STARTING_UNITS = [
   // === UNION (north, y~180-230) ===
   // Infantry center
-  { owner: 1, x: 400,  y: 220, count: 55, unitType: 'infantry' },
-  { owner: 1, x: 560,  y: 210, count: 55, unitType: 'infantry' },
-  { owner: 1, x: 720,  y: 200, count: 60, unitType: 'infantry' },
-  { owner: 1, x: 880,  y: 210, count: 55, unitType: 'infantry' },
-  { owner: 1, x: 1040, y: 220, count: 50, unitType: 'infantry' },
+  { owner: 1, x: 400,  y: 140, count: 55, unitType: 'infantry' },
+  { owner: 1, x: 560,  y: 130, count: 55, unitType: 'infantry' },
+  { owner: 1, x: 720,  y: 120, count: 60, unitType: 'infantry' },
+  { owner: 1, x: 880,  y: 130, count: 55, unitType: 'infantry' },
+  { owner: 1, x: 1040, y: 140, count: 50, unitType: 'infantry' },
   // Cavalry on flanks
-  { owner: 1, x: 140,  y: 190, count: 35, unitType: 'cavalry' },
-  { owner: 1, x: 1350, y: 180, count: 35, unitType: 'cavalry' },
+  { owner: 1, x: 140,  y: 110, count: 35, unitType: 'cavalry' },
+  { owner: 1, x: 1350, y: 100, count: 35, unitType: 'cavalry' },
   // Artillery behind the line
-  { owner: 1, x: 520,  y: 110, count: 20, unitType: 'cannon' },
-  { owner: 1, x: 800,  y: 90,  count: 25, unitType: 'cannon' },
-  { owner: 1, x: 1100, y: 110, count: 20, unitType: 'cannon' },
+  { owner: 1, x: 520,  y: 30, count: 20, unitType: 'cannon' },
+  { owner: 1, x: 800,  y: 10,  count: 25, unitType: 'cannon' },
+  { owner: 1, x: 1100, y: 30, count: 20, unitType: 'cannon' },
   // Commander
-  { owner: 1, x: 760,  y: 60,  count: 10, unitType: 'commander' },
+  { owner: 1, x: 760,  y: 10,  count: 10, unitType: 'commander' },
 
   // === CONFEDERATE (south, y~770-820) ===
   // Infantry center
-  { owner: 2, x: 400,  y: 780, count: 50, unitType: 'infantry' },
-  { owner: 2, x: 560,  y: 790, count: 50, unitType: 'infantry' },
-  { owner: 2, x: 720,  y: 800, count: 60, unitType: 'infantry' },
-  { owner: 2, x: 880,  y: 790, count: 50, unitType: 'infantry' },
-  { owner: 2, x: 1040, y: 780, count: 45, unitType: 'infantry' },
+  { owner: 2, x: 400,  y: 860, count: 50, unitType: 'infantry' },
+  { owner: 2, x: 560,  y: 870, count: 50, unitType: 'infantry' },
+  { owner: 2, x: 720,  y: 880, count: 60, unitType: 'infantry' },
+  { owner: 2, x: 880,  y: 870, count: 50, unitType: 'infantry' },
+  { owner: 2, x: 1040, y: 860, count: 45, unitType: 'infantry' },
   // Cavalry on flanks
-  { owner: 2, x: 140,  y: 810, count: 30, unitType: 'cavalry' },
-  { owner: 2, x: 1350, y: 820, count: 30, unitType: 'cavalry' },
+  { owner: 2, x: 140,  y: 890, count: 30, unitType: 'cavalry' },
+  { owner: 2, x: 1350, y: 900, count: 30, unitType: 'cavalry' },
   // Artillery behind the line
-  { owner: 2, x: 500,  y: 880, count: 18, unitType: 'cannon' },
-  { owner: 2, x: 780,  y: 900, count: 22, unitType: 'cannon' },
-  { owner: 2, x: 1060, y: 880, count: 18, unitType: 'cannon' },
+  { owner: 2, x: 500,  y: 960, count: 18, unitType: 'cannon' },
+  { owner: 2, x: 780,  y: 980, count: 22, unitType: 'cannon' },
+  { owner: 2, x: 1060, y: 960, count: 18, unitType: 'cannon' },
   // Commander
-  { owner: 2, x: 700,  y: 940, count: 10, unitType: 'commander' },
+  { owner: 2, x: 700,  y: 990, count: 10, unitType: 'commander' },
 ];

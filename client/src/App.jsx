@@ -201,12 +201,17 @@ function App() {
       
       // Play context-appropriate sound effects
       let playedAudio = 0;
+      let playedMelee = 0;
       let engagedCount = 0;
       engine.groups.forEach(g => {
         if (g.isEngaged) engagedCount++;
         if (g.justFired && playedAudio < 2) {
           soundManager.playCombat(g.unitType, g.x, g.y, mapWidth / 2, mapHeight / 2);
           playedAudio++;
+        }
+        if (g.justMeleed && playedMelee < 1) {
+          soundManager.playMelee(g.x, g.y, mapWidth / 2, mapHeight / 2);
+          playedMelee++;
         }
       });
 
@@ -225,6 +230,7 @@ function App() {
         groups: engine.groups.map(g => ({ ...g })),
         dyingGroups: engine.dyingGroups.map(g => ({ ...g })),
         selectedGroupIds: new Set(engine.selectedGroupIds),
+        smokes: engine.smokes ? engine.smokes.map(s => ({...s})) : [],
       });
       const v = engine.checkVictory();
       if (v && !victory) {
@@ -709,8 +715,18 @@ function App() {
 
 
 
+        {/* Lingering Smoke Particles */}
+        {gameState.smokes && gameState.smokes.map((s, idx) => {
+          const opacity = Math.max(0, s.life / s.maxLife) * 0.6;
+          return (
+             <circle key={`smoke-${idx}`} cx={s.x} cy={s.y} r={s.r}
+               fill={`rgba(230, 225, 210, ${opacity})`} filter="blur(3px)" pointerEvents="none" />
+          );
+        })}
+
         {/* Combat Streaks and Smoke */}
         {gameState.groups.filter(g => g.targetId && engine.time - (g.lastFired || 0) < 150).flatMap(g => {
+          if (g.justMeleed) return []; // No bright gun streaks for melee
           const target = gameState.groups.find(t => t.id === g.targetId);
           if (!target) return [];
 
@@ -724,23 +740,38 @@ function App() {
           const py = ux;
 
           const barWidth = g.unitType === 'cannon' ? 20 : g.unitType === 'cavalry' ? 32 : 40;
-          const numShots = g.unitType === 'cannon' ? 2 : 4;
+          // Coordinated concentrated fire when stationary, sporadic/random when moving
+          const numShots = g.unitType === 'cannon' ? 5 : (g.isMoving ? 4 : 12);
 
           return Array.from({ length: numShots }, (_, i) => {
-            // Spread muzzle points evenly across bar with slight random jitter
-            const t_bar = (i / (numShots - 1) - 0.5) * barWidth + (Math.random() - 0.5) * 8;
+            // Spread muzzle points evenly across bar with slight random jitter, or purely random if moving
+            const t_bar = g.isMoving 
+                ? (Math.random() - 0.5) * barWidth 
+                : (i / (numShots - 1 || 1) - 0.5) * barWidth + (Math.random() - 0.5) * 4;
             const mx = g.x + px * t_bar + ux * 14;
             const my = g.y + py * t_bar + uy * 14;
-            // Slight angular spray on the target end
-            const spread = barWidth * 0.3;
-            const tx = target.x + px * (Math.random() - 0.5) * spread;
-            const ty = target.y + py * (Math.random() - 0.5) * spread;
+            
+            // Random/sporadic shots while moving have much wider spread and less coordinated targeting
+            const spread = g.isMoving ? barWidth * 1.5 : barWidth * 0.3;
+            // Short streaks for sporadic, longer for concentrated
+            const streakLen = g.isMoving ? (Math.random() * 0.4 + 0.3) : (Math.random() * 0.6 + 0.4);
+            
+            const targetXOff = (Math.random() - 0.5) * spread;
+            const targetYOff = (Math.random() - 0.5) * spread;
+            
+            const baseTx = target.x + px * targetXOff;
+            const baseTy = target.y + py * targetYOff;
+            
+            // Limit streak length so it looks more like "tiny streaks of gunfire"
+            const tx = mx + (baseTx - mx) * streakLen;
+            const ty = my + (baseTy - my) * streakLen;
+
             const opacity = 0.5 + Math.random() * 0.4;
             return (
               <g key={`combat-${g.id}-${i}`}>
                 <line x1={mx} y1={my} x2={tx} y2={ty}
                   stroke={`rgba(255,255,255,${opacity})`} strokeWidth={1 + Math.random()}
-                  strokeDasharray="30 60" className="combat-streak" />
+                  strokeDasharray={g.isMoving ? "15 30" : "30 60"} className="combat-streak" />
                 <circle cx={mx} cy={my} r={2 + Math.random() * 1.5} fill="rgba(220,210,180,0.8)"
                   className="smoke-puff" />
               </g>

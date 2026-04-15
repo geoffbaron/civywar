@@ -254,6 +254,57 @@ class SoundManager {
     }
   }
 
+  // ─── Melee (Close Combat) Synthesized Sounds ───
+  playMelee(x, y, mapCenterX = 600, mapCenterY = 450) {
+    if (!this.ready || !this.ctx || this.muted) return;
+    const now = this.ctx.currentTime;
+    
+    // Throttle melee sounds so it's not deafening
+    if (now - (this.lastPlayTime['melee'] || 0) < 0.2) return;
+    this.lastPlayTime['melee'] = now;
+
+    try {
+      this.resume();
+      const dist = Math.hypot(x - mapCenterX, y - mapCenterY);
+      const pan = (x - mapCenterX) / (mapCenterX || 1);
+      const distVol = Math.max(0.05, 1.0 - dist / 800);
+
+      // Create a metallic "clack" / filtered noise burst
+      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.15, this.ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        // High frequency transient
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / this.ctx.sampleRate * 50);
+      }
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = 0.8 + Math.random() * 0.4;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1200 + Math.random() * 800; // metallic range
+      filter.Q.value = 2.0;
+
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0.6 * distVol;
+      gain.gain.setValueAtTime(0.6 * distVol, now);
+      gain.gain.linearRampToValueAtTime(0, now + 0.15);
+
+      let output = gain;
+      if (pan !== 0 && this.ctx.createStereoPanner) {
+        const panner = this.ctx.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, pan));
+        gain.connect(panner);
+        output = panner;
+      }
+
+      src.connect(filter);
+      filter.connect(gain);
+      output.connect(this.masterGain);
+      src.start(now);
+    } catch (e) { /* ignore */ }
+  }
+
   // ─── Synthesized sounds for events without samples ───
   playMarchingFeet() {
     if (!this.ready || !this.ctx) return;
