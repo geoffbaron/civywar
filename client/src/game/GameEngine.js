@@ -876,12 +876,18 @@ export class GameEngine {
     groupIds.forEach((id, idx) => {
       const g = this.groups.find(gr => gr.id === id);
       if (g) {
-         // Drop leading waypoints that are near the unit (avoids backward movement)
+         // Find the closest point in the drawn path to the unit
+         // Drop all waypoints before the closest point so the unit doesn't walk backwards to start the line
          let startIdx = 0;
-         while (startIdx < pathPoints.length - 1 &&
-                Math.hypot(pathPoints[startIdx].x - g.x, pathPoints[startIdx].y - g.y) < 30) {
-           startIdx++;
+         let minDist = Infinity;
+         for (let i = 0; i < pathPoints.length; i++) {
+            const dist = Math.hypot(pathPoints[i].x - g.x, pathPoints[i].y - g.y);
+            if (dist < minDist) {
+               minDist = dist;
+               startIdx = i;
+            }
          }
+         
          const trimmed = pathPoints.slice(startIdx);
          // Slight spread for multi-unit selections so they don't stack perfectly
          const spread = count > 1 ? 6 : 0;
