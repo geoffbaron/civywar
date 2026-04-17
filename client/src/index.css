@@ -23,10 +23,13 @@ body, html {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  padding-bottom: 30px;
   color: #dfcdb8;
   z-index: 50;
   box-shadow: 4px 0 20px rgba(0,0,0,0.5);
   font-family: 'Georgia', serif;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-header {
@@ -192,7 +195,7 @@ body, html {
 }
 /* Soften polygon edges for a painted watercolor feel */
 .map-background .leaflet-overlay-pane svg {
-  filter: blur(0.4px);
+  filter: blur(0.12px);
 }
 
 /* SVG game overlay — sits on top of the Leaflet map */

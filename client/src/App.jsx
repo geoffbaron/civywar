@@ -44,22 +44,11 @@ const REALISTIC_DAY_STRENGTH = {
   day3: { 1: 72000, 2: 50000 },
 };
 
-// Target aggregate gameplay strength buckets per day (keeps perf stable while preserving ratios).
-const GAMEPLAY_DAY_TOTAL = {
-  day1: 900,
-  day2: 1200,
-  day3: 1000,
-};
-
 const scaleRealisticPhaseCounts = (units, phaseKey) => {
   const dayStrength = REALISTIC_DAY_STRENGTH[phaseKey];
-  const targetTotal = GAMEPLAY_DAY_TOTAL[phaseKey];
-  if (!dayStrength || !targetTotal) return units;
+  if (!dayStrength) return units;
 
-  const sideTargets = {
-    1: targetTotal * (dayStrength[1] / (dayStrength[1] + dayStrength[2])),
-    2: targetTotal * (dayStrength[2] / (dayStrength[1] + dayStrength[2])),
-  };
+  const sideTargets = { ...dayStrength };
 
   const sideCurrent = { 1: 0, 2: 0 };
   for (const u of units) {
@@ -72,7 +61,7 @@ const scaleRealisticPhaseCounts = (units, phaseKey) => {
   };
 
   return units.map((u) =>
-    u.unitType === 'commander' ? u : { ...u, count: Math.max(8, u.count * sideScale[u.owner]) }
+    u.unitType === 'commander' ? u : { ...u, count: Math.max(120, u.count * sideScale[u.owner]) }
   );
 };
 
@@ -142,8 +131,8 @@ function App() {
   const [realisticMode, setRealisticMode] = useState(false);
   const [realisticPhase, setRealisticPhase] = useState('day1');
   const [showBriefing, setShowBriefing] = useState(false);
-  const [tileLayer, setTileLayer] = useState('watercolor');
-  const [mapStyle, setMapStyle] = useState('parchment');
+  const [tileLayer, setTileLayer] = useState('lines');
+  const [mapStyle, setMapStyle] = useState('vintage');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
   const [mapWidth, setMapWidth] = useState(1200);
   const [mapHeight, setMapHeight] = useState(800);
@@ -220,7 +209,7 @@ function App() {
   // Realistic mode should never start on a blank basemap.
   useEffect(() => {
     if (realisticMode && tileLayer === 'none') {
-      setTileLayer('watercolor');
+      setTileLayer('lines');
     }
   }, [realisticMode, tileLayer]);
 
