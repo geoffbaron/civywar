@@ -44,6 +44,9 @@ const REALISTIC_DAY_STRENGTH = {
   day3: { 1: 72000, 2: 50000 },
 };
 
+// Render only ~25% of potential formation icons for performance/readability.
+const REALISTIC_ICON_DENSITY = 0.25;
+
 const scaleRealisticPhaseCounts = (units, phaseKey) => {
   const dayStrength = REALISTIC_DAY_STRENGTH[phaseKey];
   if (!dayStrength) return units;
@@ -100,7 +103,8 @@ const splitFormationUnits = (units, enabled, phaseKey) => {
     const minGroupSize = u.unitType === 'infantry' ? 14 : u.unitType === 'cavalry' ? 10 : 8;
     const byChunk = Math.ceil(u.count / chunkSize);
     const byMinSize = Math.floor(u.count / minGroupSize);
-    const n = Math.max(1, Math.min(maxSubUnits, byChunk, Math.max(1, byMinSize)));
+    const baseN = Math.max(1, Math.min(maxSubUnits, byChunk, Math.max(1, byMinSize)));
+    const n = Math.max(1, Math.ceil(baseN * REALISTIC_ICON_DENSITY));
     if (n === 1) return [u];
 
     const per = u.count / n;
