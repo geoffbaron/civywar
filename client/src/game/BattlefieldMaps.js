@@ -623,28 +623,28 @@ export const TILE_LAYERS = {
   },
   // Stamen Watercolor via Stadia — hand-drawn parchment look
   watercolor: {
-    name: 'Watercolor',
+    name: '1860s Atlas (Watercolor)',
     url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
     attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap',
     maxZoom: 16,
   },
   // OpenTopoMap — free, no key, shows terrain contours
   topo: {
-    name: 'Terrain',
+    name: 'Modern Terrain',
     url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: '© OpenTopoMap',
     maxZoom: 17,
   },
   // Standard OSM — free, no key
   osm: {
-    name: 'Street Map',
+    name: 'Modern Street Map',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '© OpenStreetMap',
     maxZoom: 19,
   },
   // ESRI World Imagery — satellite
   satellite: {
-    name: 'Satellite',
+    name: 'Modern Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '© Esri',
     maxZoom: 18,

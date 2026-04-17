@@ -96,8 +96,8 @@ function App() {
   const [realisticMode, setRealisticMode] = useState(false);
   const [realisticPhase, setRealisticPhase] = useState('day1');
   const [showBriefing, setShowBriefing] = useState(false);
-  const [tileLayer, setTileLayer] = useState('none');
-  const [mapStyle, setMapStyle] = useState('vintage');
+  const [tileLayer, setTileLayer] = useState('watercolor');
+  const [mapStyle, setMapStyle] = useState('parchment');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
   const [mapWidth, setMapWidth] = useState(1200);
   const [mapHeight, setMapHeight] = useState(800);
@@ -170,6 +170,13 @@ function App() {
     setGameStarted(false);
     setVictory(0);
   }, [realisticMode, realisticPhase]);
+
+  // Realistic mode should never start on a blank basemap.
+  useEffect(() => {
+    if (realisticMode && tileLayer === 'none') {
+      setTileLayer('watercolor');
+    }
+  }, [realisticMode, tileLayer]);
 
   // Initialize game when map is ready — uses ref to always get latest battle
   const onMapReady = useCallback((info) => {
