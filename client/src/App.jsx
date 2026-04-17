@@ -37,35 +37,81 @@ const FORMATION_OFFSETS = [
   [-3, -1], [3, -1],
 ];
 
+// Approximate engaged strengths by battle day (used for realistic-mode side ratios).
+const REALISTIC_DAY_STRENGTH = {
+  day1: { 1: 22000, 2: 27000 },
+  day2: { 1: 78000, 2: 65000 },
+  day3: { 1: 72000, 2: 50000 },
+};
+
+// Target aggregate gameplay strength buckets per day (keeps perf stable while preserving ratios).
+const GAMEPLAY_DAY_TOTAL = {
+  day1: 900,
+  day2: 1200,
+  day3: 1000,
+};
+
+const scaleRealisticPhaseCounts = (units, phaseKey) => {
+  const dayStrength = REALISTIC_DAY_STRENGTH[phaseKey];
+  const targetTotal = GAMEPLAY_DAY_TOTAL[phaseKey];
+  if (!dayStrength || !targetTotal) return units;
+
+  const sideTargets = {
+    1: targetTotal * (dayStrength[1] / (dayStrength[1] + dayStrength[2])),
+    2: targetTotal * (dayStrength[2] / (dayStrength[1] + dayStrength[2])),
+  };
+
+  const sideCurrent = { 1: 0, 2: 0 };
+  for (const u of units) {
+    if (u.unitType !== 'commander') sideCurrent[u.owner] += u.count;
+  }
+
+  const sideScale = {
+    1: sideCurrent[1] > 0 ? sideTargets[1] / sideCurrent[1] : 1,
+    2: sideCurrent[2] > 0 ? sideTargets[2] / sideCurrent[2] : 1,
+  };
+
+  return units.map((u) =>
+    u.unitType === 'commander' ? u : { ...u, count: Math.max(8, u.count * sideScale[u.owner]) }
+  );
+};
+
 const splitFormationUnits = (units, enabled, phaseKey) => {
   if (!enabled) return units;
 
-  return units.flatMap((u) => {
+  const scaledUnits = scaleRealisticPhaseCounts(units, phaseKey);
+
+  return scaledUnits.flatMap((u) => {
     if (u.unitType === 'commander' || u.count <= 0) return [u];
 
     const day2 = phaseKey === 'day2';
     const day3 = phaseKey === 'day3';
+    const isUnion = u.owner === 1;
 
     const chunkSize =
-      u.unitType === 'infantry' ? (day2 ? 9 : day3 ? 8 : 12)
-      : u.unitType === 'cavalry' ? (day3 ? 7 : 9)
-      : (day2 || day3 ? 4 : 6);
+      u.unitType === 'infantry' ? (day2 || day3 ? (isUnion ? 24 : 20) : (isUnion ? 22 : 18))
+      : u.unitType === 'cavalry' ? (isUnion ? 16 : 13)
+      : (day2 || day3 ? 12 : 10);
 
     const spacing =
-      u.unitType === 'infantry' ? (day2 ? 0.00040 : 0.00045)
+      u.unitType === 'infantry' ? (day2 ? 0.00042 : 0.00045)
       : u.unitType === 'cavalry' ? 0.00055
-      : (day2 || day3 ? 0.00032 : 0.00038);
+      : (day2 || day3 ? 0.00036 : 0.00040);
 
     const depth =
-      u.unitType === 'infantry' ? (day2 ? 0.00024 : 0.00028)
-      : u.unitType === 'cavalry' ? 0.00030
-      : (day2 || day3 ? 0.00018 : 0.00022);
+      u.unitType === 'infantry' ? (day2 ? 0.00022 : 0.00026)
+      : u.unitType === 'cavalry' ? 0.00026
+      : (day2 || day3 ? 0.00015 : 0.00019);
 
     const maxSubUnits =
-      u.unitType === 'infantry' ? (day2 ? 20 : day3 ? 22 : 14)
-      : u.unitType === 'cavalry' ? 10
-      : (day2 || day3 ? 16 : 10);
-    const n = Math.min(maxSubUnits, Math.max(1, Math.ceil(u.count / chunkSize)));
+      u.unitType === 'infantry' ? (day2 || day3 ? (isUnion ? 8 : 10) : (isUnion ? 7 : 9))
+      : u.unitType === 'cavalry' ? 4
+      : 5;
+
+    const minGroupSize = u.unitType === 'infantry' ? 14 : u.unitType === 'cavalry' ? 10 : 8;
+    const byChunk = Math.ceil(u.count / chunkSize);
+    const byMinSize = Math.floor(u.count / minGroupSize);
+    const n = Math.max(1, Math.min(maxSubUnits, byChunk, Math.max(1, byMinSize)));
     if (n === 1) return [u];
 
     const per = u.count / n;
@@ -305,11 +351,16 @@ function App() {
       // Play context-appropriate sound effects
       let playedAudio = 0;
       let engagedCount = 0;
+      let playedMelee = 0;
       engine.groups.forEach(g => {
         if (g.isEngaged) engagedCount++;
-        if (g.justFired && playedAudio < 2) {
+        if (g.justFired && playedAudio < 4) {
           soundManager.playCombat(g.unitType, g.x, g.y, mapWidth / 2, mapHeight / 2);
           playedAudio++;
+        }
+        if (g.isEngaged && playedMelee < 2) {
+          soundManager.playMelee(g.x, g.y, mapWidth / 2, mapHeight / 2);
+          playedMelee++;
         }
       });
 

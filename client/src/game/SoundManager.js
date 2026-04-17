@@ -12,9 +12,9 @@
 // ═══════════════════════════════════════════════════════════════
 
 const SOUNDS = {
-  cannon:        { src: '/sounds/cannon.mp3',         volume: 0.5,  maxConcurrent: 2 },
-  musket:        { src: '/sounds/musket.mp3',         volume: 0.25, maxConcurrent: 3 },
-  musketVolley:  { src: '/sounds/musket-volley.m4a',  volume: 0.35, maxConcurrent: 3 },
+  cannon:        { src: '/sounds/cannon.mp3',         volume: 0.5,  maxConcurrent: 3 },
+  musket:        { src: '/sounds/musket.mp3',         volume: 0.25, maxConcurrent: 6 },
+  musketVolley:  { src: '/sounds/musket-volley.m4a',  volume: 0.35, maxConcurrent: 5 },
   drums:         { src: '/sounds/drums.mp3',          volume: 0.12, maxConcurrent: 1 },
   gallop:        { src: '/sounds/gallop.mp3',         volume: 0.2,  maxConcurrent: 2 },
   fanfare:       { src: '/sounds/fanfare.mp3',        volume: 0.45, maxConcurrent: 1 },
@@ -37,6 +37,8 @@ class SoundManager {
     this.lastMusketVolleyTime = 0;
     this.lastCavalryTime = 0;
     this.volleyCounter = 0;  // builds up during sustained fire
+    this.lastAmbientVolleyTime = 0;
+    this.lastAmbientCannonTime = 0;
   }
 
   async init() {
@@ -336,6 +338,8 @@ class SoundManager {
 
   // ─── Update combat intensity (call each frame) ───
   updateIntensity(engagedCount, totalCount) {
+    if (!this.ctx) return;
+
     const target = totalCount > 0 ? engagedCount / totalCount : 0;
     this.combatIntensity += (target - this.combatIntensity) * 0.05;
 
@@ -345,6 +349,38 @@ class SoundManager {
       this.loopingSources.drums.gain.gain.linearRampToValueAtTime(
         targetVol, this.ctx.currentTime + 0.5
       );
+    }
+
+    // Add low-volume ambient battle bed while many units are clashing.
+    // This supplements per-unit fire sounds so sustained fights feel alive.
+    const now = this.ctx.currentTime;
+    if (this.combatIntensity > 0.08) {
+      const volleyInterval = Math.max(0.35, 1.5 - this.combatIntensity * 1.0);
+      if (now - this.lastAmbientVolleyTime > volleyInterval) {
+        this.lastAmbientVolleyTime = now;
+        const useVolley = Math.random() < 0.7;
+        this._play(useVolley ? 'musketVolley' : 'musket', {
+          distance: 280 + Math.random() * 260,
+          rate: useVolley ? (0.84 + Math.random() * 0.25) : (0.76 + Math.random() * 0.45),
+          volume: 0.18 + this.combatIntensity * 0.22,
+          pan: -0.85 + Math.random() * 1.7,
+          offset: Math.random() * 1.3,
+          duration: useVolley ? (0.8 + Math.random() * 1.1) : (0.25 + Math.random() * 0.45),
+        });
+      }
+
+      const cannonInterval = Math.max(2.0, 6.0 - this.combatIntensity * 4.0);
+      if (this.combatIntensity > 0.28 && now - this.lastAmbientCannonTime > cannonInterval) {
+        this.lastAmbientCannonTime = now;
+        this._play('cannon', {
+          distance: 420 + Math.random() * 360,
+          rate: 0.82 + Math.random() * 0.25,
+          volume: 0.12 + this.combatIntensity * 0.18,
+          pan: -0.9 + Math.random() * 1.8,
+          offset: Math.random() * 0.3,
+          duration: 0.9 + Math.random() * 1.0,
+        });
+      }
     }
   }
 }
