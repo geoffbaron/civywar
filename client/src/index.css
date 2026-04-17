@@ -246,6 +246,84 @@ body, html {
   font-style: italic;
 }
 
+/* ─── Realistic Mode ─── */
+.realistic-mode-section {
+  border-top: 1px solid rgba(255,196,80,0.2);
+  padding-top: 8px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-family: 'Georgia', serif;
+  background: #1a1a14;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn:hover {
+  background: #2a2a1e;
+  color: #bbb;
+}
+.mode-btn-active {
+  background: #2a2a1e;
+  color: #ccc;
+  border-color: #666;
+}
+.mode-btn-realistic.mode-btn-active {
+  background: #3a2010;
+  color: #f0c060;
+  border-color: #a06020;
+}
+.briefing-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: 'Georgia', serif;
+  background: #2a1a0a;
+  color: #e0b060;
+  border: 1px solid #804020;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.briefing-btn:hover {
+  background: #3a2a10;
+  border-color: #c06030;
+}
+.briefing-modal {
+  max-width: 620px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.briefing-date {
+  text-align: center;
+  color: #a88858;
+  font-size: 13px;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+.briefing-objective {
+  background: rgba(200,80,20,0.15);
+  border: 1px solid rgba(200,80,20,0.4);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #f0c080;
+  margin-bottom: 12px;
+}
+.briefing-text {
+  font-family: 'Georgia', serif;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #cccccc;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
 /* ─── Victory ─── */
 .victory-overlay {
   position: fixed;

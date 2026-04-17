@@ -40,7 +40,6 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
-    this.smokes = [];
 
     for (const u of units) {
       this.groups.push({
@@ -87,7 +86,6 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
-    this.smokes = [];
 
     for (const u of STARTING_UNITS) {
       this.groups.push({
@@ -341,20 +339,9 @@ export class GameEngine {
     const dt = Math.min(deltaMs / 1000, 0.1);
     this.time = (this.time || 0) + deltaMs;
 
-    if (!this.smokes) this.smokes = [];
-    for (let i = this.smokes.length - 1; i >= 0; i--) {
-      const s = this.smokes[i];
-      s.life -= dt;
-      s.x += s.dx * dt;
-      s.y += s.dy * dt;
-      s.r += dt * 3;
-      if (s.life <= 0) this.smokes.splice(i, 1);
-    }
-
     // Reset visual engagement state
     for (const g of this.groups) {
       g.isEngaged = false;
-      g.justMeleed = false;
       g.targetId = null;
       g.justFired = false;
       if (g.fireTimer > 0) g.fireTimer -= dt;
@@ -626,26 +613,10 @@ export class GameEngine {
           b.morale -= (aCanMelee ? 8 : 3) * dt;  // melee is terrifying
           a.isEngaged = true;
           a.targetId = b.id;
-          const aFireDelay = aCanMelee ? 800 : (a.isMoving ? (1000 + Math.random() * 1500) : (4000 + Math.random() * 3000));
-          if (!a.lastFired || this.time - a.lastFired > aFireDelay) {
+          if (!a.lastFired || this.time - a.lastFired > 4000 + Math.random() * 3000) {
             a.lastFired = this.time;
-            a.justMeleed = aCanMelee;
-            a.justFired = !aCanMelee;
-            a.fireTimer = a.isMoving ? 0.1 : 0.3; // Volley flash duration
-            
-            if (!aCanMelee) {
-              for (let k = 0; k < (a.unitType === 'cannon' ? 5 : 3); k++) {
-                this.smokes.push({
-                  x: a.x + (Math.random() - 0.5) * 20,
-                  y: a.y + (Math.random() - 0.5) * 20,
-                  life: Math.random() * 2.0 + 3.0,
-                  maxLife: 5.0,
-                  r: Math.random() * 8 + 4,
-                  dx: (Math.random() - 0.5) * 8,
-                  dy: -Math.random() * 10 - 5
-                });
-              }
-            }
+            a.justFired = true;
+            a.fireTimer = 0.3; // Volley flash duration (300ms)
           }
         }
         if ((bCanFire && bCanSee && dist < bRange) || bCanMelee) {
@@ -655,26 +626,10 @@ export class GameEngine {
           a.morale -= (bCanMelee ? 8 : 3) * dt;
           b.isEngaged = true;
           b.targetId = a.id;
-          const bFireDelay = bCanMelee ? 800 : (b.isMoving ? (1000 + Math.random() * 1500) : (4000 + Math.random() * 3000));
-          if (!b.lastFired || this.time - b.lastFired > bFireDelay) {
+          if (!b.lastFired || this.time - b.lastFired > 4000 + Math.random() * 3000) {
             b.lastFired = this.time;
-            b.justMeleed = bCanMelee;
-            b.justFired = !bCanMelee;
-            b.fireTimer = b.isMoving ? 0.1 : 0.3; // Volley flash duration
-
-            if (!bCanMelee) {
-              for (let k = 0; k < (b.unitType === 'cannon' ? 5 : 3); k++) {
-                this.smokes.push({
-                  x: b.x + (Math.random() - 0.5) * 20,
-                  y: b.y + (Math.random() - 0.5) * 20,
-                  life: Math.random() * 2.0 + 3.0,
-                  maxLife: 5.0,
-                  r: Math.random() * 8 + 4,
-                  dx: (Math.random() - 0.5) * 8,
-                  dy: -Math.random() * 10 - 5
-                });
-              }
-            }
+            b.justFired = true;
+            b.fireTimer = 0.3; // Volley flash duration (300ms)
           }
         }
 
@@ -876,18 +831,12 @@ export class GameEngine {
     groupIds.forEach((id, idx) => {
       const g = this.groups.find(gr => gr.id === id);
       if (g) {
-         // Find the closest point in the drawn path to the unit
-         // Drop all waypoints before the closest point so the unit doesn't walk backwards to start the line
+         // Drop leading waypoints that are near the unit (avoids backward movement)
          let startIdx = 0;
-         let minDist = Infinity;
-         for (let i = 0; i < pathPoints.length; i++) {
-            const dist = Math.hypot(pathPoints[i].x - g.x, pathPoints[i].y - g.y);
-            if (dist < minDist) {
-               minDist = dist;
-               startIdx = i;
-            }
+         while (startIdx < pathPoints.length - 1 &&
+                Math.hypot(pathPoints[startIdx].x - g.x, pathPoints[startIdx].y - g.y) < 30) {
+           startIdx++;
          }
-         
          const trimmed = pathPoints.slice(startIdx);
          // Slight spread for multi-unit selections so they don't stack perfectly
          const spread = count > 1 ? 6 : 0;

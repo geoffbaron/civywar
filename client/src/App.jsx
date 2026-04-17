@@ -30,6 +30,9 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [currentBattle, setCurrentBattle] = useState('antietam');
+  const [realisticMode, setRealisticMode] = useState(false);
+  const [realisticPhase, setRealisticPhase] = useState('day1');
+  const [showBriefing, setShowBriefing] = useState(false);
   const [tileLayer, setTileLayer] = useState('none');
   const [mapStyle, setMapStyle] = useState('vintage');
   const [mapInfo, setMapInfo] = useState(null); // { latLngToPixel, width, height }
@@ -45,6 +48,10 @@ function App() {
   const svgRef = useRef();
   const currentBattleRef = useRef(currentBattle);
   currentBattleRef.current = currentBattle;
+  const realisticModeRef = useRef(realisticMode);
+  realisticModeRef.current = realisticMode;
+  const realisticPhaseRef = useRef(realisticPhase);
+  realisticPhaseRef.current = realisticPhase;
   // Live Leaflet references — used for reproject on pan/zoom
   const latLngToPixelRef = useRef(null);
   const pixelToLatLngRef = useRef(null);
@@ -84,6 +91,21 @@ function App() {
     engine.geoTerrain = transformedGeoTerrain;
   }, [transformedGeoTerrain]);
 
+  // Re-init battlefield when realistic mode or phase changes
+  useEffect(() => {
+    const bf = BATTLEFIELDS[currentBattle];
+    if (!bf || !latLngToPixelRef.current) return;
+    const phase = realisticMode && bf.realisticPhases ? bf.realisticPhases[realisticPhase] : null;
+    const activeForts = phase ? phase.forts : bf.forts;
+    const activeUnits = phase ? phase.units : bf.units;
+    const forts = activeForts.map(f => ({ ...f, ...latLngToPixelRef.current(f.lat, f.lng) }));
+    const units = activeUnits.map(u => ({ ...u, ...latLngToPixelRef.current(u.lat, u.lng) }));
+    engine.initFromBattlefield(forts, units, mapWidth, mapHeight, transformedGeoTerrain);
+    engine.running = false;
+    setGameStarted(false);
+    setVictory(0);
+  }, [realisticMode, realisticPhase]);
+
   // Initialize game when map is ready — uses ref to always get latest battle
   const onMapReady = useCallback((info) => {
     setMapInfo(info);
@@ -104,8 +126,15 @@ function App() {
     if (!bf) return;
 
     try {
-      const forts = bf.forts.map(f => ({ ...f, ...info.latLngToPixel(f.lat, f.lng) }));
-      const units = bf.units.map(u => ({ ...u, ...info.latLngToPixel(u.lat, u.lng) }));
+      // Use realistic phase data if in realistic mode and the battlefield supports it
+      const phase = realisticModeRef.current && bf.realisticPhases
+        ? bf.realisticPhases[realisticPhaseRef.current]
+        : null;
+      const activeForts = phase ? phase.forts : bf.forts;
+      const activeUnits = phase ? phase.units : bf.units;
+
+      const forts = activeForts.map(f => ({ ...f, ...info.latLngToPixel(f.lat, f.lng) }));
+      const units = activeUnits.map(u => ({ ...u, ...info.latLngToPixel(u.lat, u.lng) }));
       engine.currentZoom = info.refZoom;
       engine.centerLat = info.refCenter.lat;
       engine.initFromBattlefield(forts, units, info.width, info.height, transformedGeoTerrain);
@@ -201,17 +230,12 @@ function App() {
       
       // Play context-appropriate sound effects
       let playedAudio = 0;
-      let playedMelee = 0;
       let engagedCount = 0;
       engine.groups.forEach(g => {
         if (g.isEngaged) engagedCount++;
         if (g.justFired && playedAudio < 2) {
           soundManager.playCombat(g.unitType, g.x, g.y, mapWidth / 2, mapHeight / 2);
           playedAudio++;
-        }
-        if (g.justMeleed && playedMelee < 1) {
-          soundManager.playMelee(g.x, g.y, mapWidth / 2, mapHeight / 2);
-          playedMelee++;
         }
       });
 
@@ -230,7 +254,6 @@ function App() {
         groups: engine.groups.map(g => ({ ...g })),
         dyingGroups: engine.dyingGroups.map(g => ({ ...g })),
         selectedGroupIds: new Set(engine.selectedGroupIds),
-        smokes: engine.smokes ? engine.smokes.map(s => ({...s})) : [],
       });
       const v = engine.checkVictory();
       if (v && !victory) {
@@ -475,8 +498,13 @@ function App() {
     // Re-init the battlefield from scratch
     const bf = BATTLEFIELDS[currentBattleRef.current];
     if (bf && latLngToPixelRef.current) {
-      const forts = bf.forts.map(f => ({ ...f, ...latLngToPixelRef.current(f.lat, f.lng) }));
-      const units = bf.units.map(u => ({ ...u, ...latLngToPixelRef.current(u.lat, u.lng) }));
+      const phase = realisticModeRef.current && bf.realisticPhases
+        ? bf.realisticPhases[realisticPhaseRef.current]
+        : null;
+      const activeForts = phase ? phase.forts : bf.forts;
+      const activeUnits = phase ? phase.units : bf.units;
+      const forts = activeForts.map(f => ({ ...f, ...latLngToPixelRef.current(f.lat, f.lng) }));
+      const units = activeUnits.map(u => ({ ...u, ...latLngToPixelRef.current(u.lat, u.lng) }));
       engine.initFromBattlefield(forts, units, mapWidth, mapHeight, transformedGeoTerrain);
     }
   };
@@ -537,7 +565,7 @@ function App() {
         <div className="sidebar-section" data-wt="battle-selector">
           <label className="sidebar-label">Battle</label>
           <select className="sidebar-select" value={currentBattle}
-            onChange={(e) => setCurrentBattle(e.target.value)}>
+            onChange={(e) => { setCurrentBattle(e.target.value); setRealisticMode(false); }}>
             {Object.entries(BATTLEFIELDS).map(([key, bf]) => (
               <option key={key} value={key}>{bf.name}</option>
             ))}
@@ -546,6 +574,46 @@ function App() {
             {BATTLEFIELDS[currentBattle]?.date}
           </div>
         </div>
+
+        {/* Realistic Mode — only shown when battlefield supports it */}
+        {BATTLEFIELDS[currentBattle]?.realisticPhases && (
+          <div className="sidebar-section realistic-mode-section">
+            <label className="sidebar-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>Mode</span>
+            </label>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+              <button
+                className={`mode-btn ${!realisticMode ? 'mode-btn-active' : ''}`}
+                onClick={() => setRealisticMode(false)}
+              >Standard</button>
+              <button
+                className={`mode-btn ${realisticMode ? 'mode-btn-active mode-btn-realistic' : ''}`}
+                onClick={() => setRealisticMode(true)}
+              >⚔ Realistic</button>
+            </div>
+            {realisticMode && (
+              <>
+                <label className="sidebar-label">Day / Phase</label>
+                <select className="sidebar-select" value={realisticPhase}
+                  onChange={(e) => setRealisticPhase(e.target.value)}>
+                  {Object.entries(BATTLEFIELDS[currentBattle].realisticPhases).map(([key, phase]) => (
+                    <option key={key} value={key}>{phase.name}</option>
+                  ))}
+                </select>
+                <div className="battle-info" style={{ marginTop: 4 }}>
+                  {BATTLEFIELDS[currentBattle].realisticPhases[realisticPhase]?.date}
+                </div>
+                <div className="battle-info" style={{ marginTop: 4, fontStyle: 'italic' }}>
+                  {BATTLEFIELDS[currentBattle].realisticPhases[realisticPhase]?.description}
+                </div>
+                <button
+                  className="briefing-btn"
+                  onClick={() => setShowBriefing(true)}
+                >📜 Commander's Briefing</button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Map style selector */}
         <div className="sidebar-section">
@@ -715,18 +783,8 @@ function App() {
 
 
 
-        {/* Lingering Smoke Particles */}
-        {gameState.smokes && gameState.smokes.map((s, idx) => {
-          const opacity = Math.max(0, s.life / s.maxLife) * 0.6;
-          return (
-             <circle key={`smoke-${idx}`} cx={s.x} cy={s.y} r={s.r}
-               fill={`rgba(230, 225, 210, ${opacity})`} filter="blur(3px)" pointerEvents="none" />
-          );
-        })}
-
         {/* Combat Streaks and Smoke */}
         {gameState.groups.filter(g => g.targetId && engine.time - (g.lastFired || 0) < 150).flatMap(g => {
-          if (g.justMeleed) return []; // No bright gun streaks for melee
           const target = gameState.groups.find(t => t.id === g.targetId);
           if (!target) return [];
 
@@ -740,38 +798,23 @@ function App() {
           const py = ux;
 
           const barWidth = g.unitType === 'cannon' ? 20 : g.unitType === 'cavalry' ? 32 : 40;
-          // Coordinated concentrated fire when stationary, sporadic/random when moving
-          const numShots = g.unitType === 'cannon' ? 5 : (g.isMoving ? 4 : 12);
+          const numShots = g.unitType === 'cannon' ? 2 : 4;
 
           return Array.from({ length: numShots }, (_, i) => {
-            // Spread muzzle points evenly across bar with slight random jitter, or purely random if moving
-            const t_bar = g.isMoving 
-                ? (Math.random() - 0.5) * barWidth 
-                : (i / (numShots - 1 || 1) - 0.5) * barWidth + (Math.random() - 0.5) * 4;
+            // Spread muzzle points evenly across bar with slight random jitter
+            const t_bar = (i / (numShots - 1) - 0.5) * barWidth + (Math.random() - 0.5) * 8;
             const mx = g.x + px * t_bar + ux * 14;
             const my = g.y + py * t_bar + uy * 14;
-            
-            // Random/sporadic shots while moving have much wider spread and less coordinated targeting
-            const spread = g.isMoving ? barWidth * 1.5 : barWidth * 0.3;
-            // Short streaks for sporadic, longer for concentrated
-            const streakLen = g.isMoving ? (Math.random() * 0.4 + 0.3) : (Math.random() * 0.6 + 0.4);
-            
-            const targetXOff = (Math.random() - 0.5) * spread;
-            const targetYOff = (Math.random() - 0.5) * spread;
-            
-            const baseTx = target.x + px * targetXOff;
-            const baseTy = target.y + py * targetYOff;
-            
-            // Limit streak length so it looks more like "tiny streaks of gunfire"
-            const tx = mx + (baseTx - mx) * streakLen;
-            const ty = my + (baseTy - my) * streakLen;
-
+            // Slight angular spray on the target end
+            const spread = barWidth * 0.3;
+            const tx = target.x + px * (Math.random() - 0.5) * spread;
+            const ty = target.y + py * (Math.random() - 0.5) * spread;
             const opacity = 0.5 + Math.random() * 0.4;
             return (
               <g key={`combat-${g.id}-${i}`}>
                 <line x1={mx} y1={my} x2={tx} y2={ty}
                   stroke={`rgba(255,255,255,${opacity})`} strokeWidth={1 + Math.random()}
-                  strokeDasharray={g.isMoving ? "15 30" : "30 60"} className="combat-streak" />
+                  strokeDasharray="30 60" className="combat-streak" />
                 <circle cx={mx} cy={my} r={2 + Math.random() * 1.5} fill="rgba(220,210,180,0.8)"
                   className="smoke-puff" />
               </g>
@@ -1424,6 +1467,32 @@ function App() {
                 )}
               </div>
               <div className="walkthrough-counter">{walkthroughStep} / {steps.length}</div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Rules Modal */}
+      {/* Commander's Briefing Modal (Realistic Mode) */}
+      {showBriefing && realisticMode && (() => {
+        const bf = BATTLEFIELDS[currentBattle];
+        const phase = bf?.realisticPhases?.[realisticPhase];
+        if (!phase) return null;
+        return (
+          <div className="rules-overlay" onClick={() => setShowBriefing(false)}>
+            <div className="rules-modal briefing-modal" onClick={e => e.stopPropagation()}>
+              <button className="rules-close" onClick={() => setShowBriefing(false)}>✕</button>
+              <h2>⚔ {phase.name}</h2>
+              <div className="briefing-date">{phase.date}</div>
+              <div className="briefing-objective">
+                <strong>Objective:</strong> {phase.victoryCondition}
+              </div>
+              <div className="rules-content">
+                <pre className="briefing-text">{phase.briefing}</pre>
+              </div>
+              <button className="game-start-btn" style={{marginTop: 16}} onClick={() => { setShowBriefing(false); startGame(); }}>
+                Begin Battle
+              </button>
             </div>
           </div>
         );
