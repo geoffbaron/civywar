@@ -21,6 +21,69 @@ const engine = new GameEngine();
 
 const FORT_HIT = 24;
 
+// Realistic mode uses formation blocks in data; expand them into many smaller units
+// so the battlefield reads more like an order-of-battle map.
+const FORMATION_OFFSETS = [
+  [0, 0],
+  [-1, 0], [1, 0],
+  [-2, 0], [2, 0],
+  [-1, 1], [1, 1],
+  [-1, -1], [1, -1],
+  [-2, 1], [2, 1],
+  [-2, -1], [2, -1],
+  [-3, 0], [3, 0],
+  [0, 1], [0, -1],
+  [-3, 1], [3, 1],
+  [-3, -1], [3, -1],
+];
+
+const splitFormationUnits = (units, enabled, phaseKey) => {
+  if (!enabled) return units;
+
+  return units.flatMap((u) => {
+    if (u.unitType === 'commander' || u.count <= 0) return [u];
+
+    const day2 = phaseKey === 'day2';
+    const day3 = phaseKey === 'day3';
+
+    const chunkSize =
+      u.unitType === 'infantry' ? (day2 ? 9 : day3 ? 8 : 12)
+      : u.unitType === 'cavalry' ? (day3 ? 7 : 9)
+      : (day2 || day3 ? 4 : 6);
+
+    const spacing =
+      u.unitType === 'infantry' ? (day2 ? 0.00040 : 0.00045)
+      : u.unitType === 'cavalry' ? 0.00055
+      : (day2 || day3 ? 0.00032 : 0.00038);
+
+    const depth =
+      u.unitType === 'infantry' ? (day2 ? 0.00024 : 0.00028)
+      : u.unitType === 'cavalry' ? 0.00030
+      : (day2 || day3 ? 0.00018 : 0.00022);
+
+    const maxSubUnits =
+      u.unitType === 'infantry' ? (day2 ? 20 : day3 ? 22 : 14)
+      : u.unitType === 'cavalry' ? 10
+      : (day2 || day3 ? 16 : 10);
+    const n = Math.min(maxSubUnits, Math.max(1, Math.ceil(u.count / chunkSize)));
+    if (n === 1) return [u];
+
+    const per = u.count / n;
+    const eastWestSign = u.owner === 1 ? -1 : 1;
+
+    return Array.from({ length: n }, (_, i) => {
+      const [ox, oy] = FORMATION_OFFSETS[i] || [i - Math.floor(n / 2), 0];
+      return {
+        ...u,
+        count: per,
+        // Bias formations to broad east-west lines facing the enemy.
+        lng: u.lng + ox * spacing,
+        lat: u.lat + oy * depth + ox * spacing * 0.18 * eastWestSign,
+      };
+    });
+  });
+};
+
 function App() {
   const [gameState, setGameState] = useState({ bases: [], groups: [], dyingGroups: [], selectedGroupId: null });
   const [dragState, setDragState] = useState(null);
@@ -97,7 +160,9 @@ function App() {
     if (!bf || !latLngToPixelRef.current) return;
     const phase = realisticMode && bf.realisticPhases ? bf.realisticPhases[realisticPhase] : null;
     const activeForts = phase ? phase.forts : bf.forts;
-    const activeUnits = phase ? phase.units : bf.units;
+    const activeUnits = phase
+      ? splitFormationUnits(phase.units, realisticMode, realisticPhase)
+      : bf.units;
     const forts = activeForts.map(f => ({ ...f, ...latLngToPixelRef.current(f.lat, f.lng) }));
     const units = activeUnits.map(u => ({ ...u, ...latLngToPixelRef.current(u.lat, u.lng) }));
     engine.initFromBattlefield(forts, units, mapWidth, mapHeight, transformedGeoTerrain);
@@ -131,7 +196,9 @@ function App() {
         ? bf.realisticPhases[realisticPhaseRef.current]
         : null;
       const activeForts = phase ? phase.forts : bf.forts;
-      const activeUnits = phase ? phase.units : bf.units;
+      const activeUnits = phase
+        ? splitFormationUnits(phase.units, realisticModeRef.current, realisticPhaseRef.current)
+        : bf.units;
 
       const forts = activeForts.map(f => ({ ...f, ...info.latLngToPixel(f.lat, f.lng) }));
       const units = activeUnits.map(u => ({ ...u, ...info.latLngToPixel(u.lat, u.lng) }));
@@ -502,7 +569,9 @@ function App() {
         ? bf.realisticPhases[realisticPhaseRef.current]
         : null;
       const activeForts = phase ? phase.forts : bf.forts;
-      const activeUnits = phase ? phase.units : bf.units;
+      const activeUnits = phase
+        ? splitFormationUnits(phase.units, realisticModeRef.current, realisticPhaseRef.current)
+        : bf.units;
       const forts = activeForts.map(f => ({ ...f, ...latLngToPixelRef.current(f.lat, f.lng) }));
       const units = activeUnits.map(u => ({ ...u, ...latLngToPixelRef.current(u.lat, u.lng) }));
       engine.initFromBattlefield(forts, units, mapWidth, mapHeight, transformedGeoTerrain);
@@ -529,6 +598,19 @@ function App() {
   };
   const union = countSide(1);
   const confed = countSide(2);
+
+  const activeBattlefield = useMemo(() => {
+    const bf = BATTLEFIELDS[currentBattle];
+    const phase = realisticMode && bf?.realisticPhases ? bf.realisticPhases[realisticPhase] : null;
+    const mapView = phase?.mapView;
+    return {
+      ...bf,
+      geoTerrain: transformedGeoTerrain,
+      bounds: mapView?.bounds || bf.bounds,
+      center: mapView?.center || bf.center,
+      zoom: mapView?.zoom || bf.zoom,
+    };
+  }, [currentBattle, realisticMode, realisticPhase, transformedGeoTerrain]);
 
   return (
     <div className="app-wrapper" onContextMenu={onContextMenu}>
@@ -694,7 +776,7 @@ function App() {
 
       {/* Leaflet map as background */}
       <MapBackground
-        battlefield={{ ...BATTLEFIELDS[currentBattle], geoTerrain: transformedGeoTerrain }}
+        battlefield={activeBattlefield}
         tileLayer={tileLayer}
         mapStyle={mapStyle}
         showTacticalOverlay={showTacticalOverlay}

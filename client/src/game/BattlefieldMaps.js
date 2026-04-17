@@ -84,9 +84,10 @@ export const BATTLEFIELDS = {
     name: 'Battle of Gettysburg',
     date: 'July 1-3, 1863',
     description: 'The turning point of the war. Meade defends Cemetery Ridge against Lee.',
-    bounds: [[39.7880, -77.2700], [39.8320, -77.1980]],
-    center: [39.8100, -77.2340],
-    zoom: 14,
+    // Tightened to core battlefield: Herr Ridge ↔ East Cavalry Field, Round Tops ↔ Oak Hill
+    bounds: [[39.7920, -77.2590], [39.8305, -77.2060]],
+    center: [39.8105, -77.2318],
+    zoom: 14.5,
     geoTerrain: GETTYSBURG_TERRAIN,
 
     // Forts = HQ rally points
@@ -161,6 +162,12 @@ export const BATTLEFIELDS = {
       day1: {
         name: 'Day 1 — The Collision',
         date: 'July 1, 1863 — ~7:30 AM',
+        mapView: {
+          // Wider north-west frame for Herr Ridge, McPherson Ridge, Oak Hill approaches
+          bounds: [[39.8000, -77.2660], [39.8440, -77.2140]],
+          center: [39.8240, -77.2400],
+          zoom: 14.25,
+        },
         description: 'Pettigrew\'s Confederate infantry approaches Gettysburg seeking supplies. Buford\'s Union cavalry holds the ridges west of town, buying time for infantry reinforcements.',
         briefing: `You command the Union Army of the Potomac's advance forces.
 
@@ -240,6 +247,12 @@ OBJECTIVE: Hold Cemetery Hill (the bend in the fishhook) until nightfall. Lose i
       day2: {
         name: 'Day 2 — Assault on the Flanks',
         date: 'July 2, 1863 — ~4:00 PM',
+        mapView: {
+          // Focus fishhook + Seminary Ridge axis, includes Round Tops and Culp's Hill
+          bounds: [[39.7900, -77.2540], [39.8320, -77.2140]],
+          center: [39.8090, -77.2330],
+          zoom: 14.75,
+        },
         description: "Lee's grand assault: Longstreet attacks the Union left at the Peach Orchard, Devil's Den, and Little Round Top. Ewell demonstrates against Culp's Hill and Cemetery Hill.",
         briefing: `You command the Union Army of the Potomac in its fishhook defensive formation.
 
@@ -336,6 +349,12 @@ OBJECTIVE: Hold Cemetery Ridge and Little Round Top through nightfall.`,
       day3: {
         name: "Day 3 — Pickett's Charge",
         date: 'July 3, 1863 — ~3:00 PM',
+        mapView: {
+          // Tight center view for Seminary Ridge jump-off to The Angle / Copse of Trees
+          bounds: [[39.7980, -77.2540], [39.8230, -77.2200]],
+          center: [39.8115, -77.2360],
+          zoom: 15.1,
+        },
         description: "Lee orders the largest Confederate assault of the war. ~12,500 men will march 3/4 mile across open fields toward the Union center at Cemetery Ridge — directly into the waiting guns of the Army of the Potomac.",
         briefing: `You command the Army of the Potomac defending Cemetery Ridge.
 

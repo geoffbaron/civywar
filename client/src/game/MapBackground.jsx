@@ -172,7 +172,17 @@ export default function MapBackground({ battlefield, tileLayer = 'none', mapStyl
       map.remove();
       setMapInstance(null);
     };
-  }, [battlefield?.name, tileLayer]); // only recreate on major battle switch or tilelayer switch
+  }, [
+    battlefield?.name,
+    battlefield?.zoom,
+    battlefield?.center?.[0],
+    battlefield?.center?.[1],
+    battlefield?.bounds?.[0]?.[0],
+    battlefield?.bounds?.[0]?.[1],
+    battlefield?.bounds?.[1]?.[0],
+    battlefield?.bounds?.[1]?.[1],
+    tileLayer,
+  ]);
 
   // Update GeoJSON when terrain array changes (for live calibration)
   useEffect(() => {
