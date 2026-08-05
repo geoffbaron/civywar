@@ -12,6 +12,14 @@ export class GameEngine {
     this.mapWidth = 1600;
     this.mapHeight = 1000;
     this.running = false;
+    this.paused = false;
+    this.speedMult = 1;
+    this.battleDuration = 360; // seconds of battle before the clock decides it
+    this.elapsed = 0;
+    this.startStrength = { 1: 0, 2: 0 };
+    this.pops = [];            // transient casualty pop-ups: {id, x, y, n, owner, age}
+    this.popIdCounter = 0;
+    this.victoryReason = null;
   }
 
   setProjections(latLngToPixel, pixelToLatLng) {
@@ -40,6 +48,9 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
+    this.elapsed = 0;
+    this.pops = [];
+    this.victoryReason = null;
 
     for (const u of units) {
       this.groups.push({
@@ -68,6 +79,16 @@ export class GameEngine {
         g.angle = g.owner === 1 ? Math.PI : 0;
       }
     }
+
+    // Record starting strength for casualty tracking and the after-action report
+    this.startStrength = { 1: 0, 2: 0 };
+    for (const g of this.groups) {
+      this.startStrength[g.owner] += g.count;
+    }
+  }
+
+  sideStrength(owner) {
+    return this.groups.reduce((s, g) => s + (g.owner === owner ? g.count : 0), 0);
   }
 
   // Legacy init from old MapData (fallback)
@@ -335,9 +356,17 @@ export class GameEngine {
   }
 
   update(deltaMs) {
-    if (!this.running) return;
-    const dt = Math.min(deltaMs / 1000, 0.1);
+    if (!this.running || this.paused) return;
+    deltaMs *= this.speedMult || 1;
+    const dt = Math.min(deltaMs / 1000, 0.25);
     this.time = (this.time || 0) + deltaMs;
+    this.elapsed += dt;
+
+    // Age & prune casualty pop-ups
+    for (let i = this.pops.length - 1; i >= 0; i--) {
+      this.pops[i].age += dt / (this.speedMult || 1); // pops fade in real time, not game time
+      if (this.pops[i].age > 1.6) this.pops.splice(i, 1);
+    }
 
     // Reset visual engagement state
     for (const g of this.groups) {
@@ -370,6 +399,7 @@ export class GameEngine {
           g.isMoving = false;
           g.stopTime = this.time;
         }
+        g.slowLabel = null;
         continue;
       }
 
@@ -408,6 +438,14 @@ export class GameEngine {
 
       const effectiveSpeed = baseSpeedAndScale * speedMult;
       const moveDist = effectiveSpeed * dt;
+
+      // Surface WHY a unit is slow so the UI can show it (fording, woods, climbing…)
+      if (speedMult <= 0.6) {
+        g.slowLabel = (destTerrain.label === 'High Ground' && terrain.label !== 'High Ground')
+          ? 'Climbing' : terrain.label;
+      } else {
+        g.slowLabel = null;
+      }
 
       // Smooth rotation: low-pass filter toward movement direction
       let targetAngle = Math.atan2(dy, dx);
@@ -610,6 +648,7 @@ export class GameEngine {
           const defB = aIgnoresWoodsDef ? 1.0 : bTerrain.defense;
           const aDps = ENGAGE_RATE * aAcc * aFacing * aFlank * aTerrain.offense * (1 / defB) * aMorale * (typeMult[a.unitType] || 1) * cannonVsMoving(a, b) * cannonRangeFalloff(a, aRange) * smallArmsRangeFalloff(a, aRange) * cannonMeleeImpotence(a, aRange) * meleeVsCannon(a, b);
           b.count -= aDps * dt;
+          b.lossAccum = (b.lossAccum || 0) + aDps * dt;
           b.morale -= (aCanMelee ? 8 : 3) * dt;  // melee is terrifying
           a.isEngaged = true;
           a.targetId = b.id;
@@ -623,6 +662,7 @@ export class GameEngine {
           const defA = bIgnoresWoodsDef ? 1.0 : aTerrain.defense;
           const bDps = ENGAGE_RATE * bAcc * bFacing * bFlank * bTerrain.offense * (1 / defA) * bMorale * (typeMult[b.unitType] || 1) * cannonVsMoving(b, a) * cannonRangeFalloff(b, bRange) * smallArmsRangeFalloff(b, bRange) * cannonMeleeImpotence(b, bRange) * meleeVsCannon(b, a);
           a.count -= bDps * dt;
+          a.lossAccum = (a.lossAccum || 0) + bDps * dt;
           a.morale -= (bCanMelee ? 8 : 3) * dt;
           b.isEngaged = true;
           b.targetId = a.id;
@@ -638,13 +678,28 @@ export class GameEngine {
     }
 
 
+    // Emit floating casualty pop-ups once a group has bled enough to notice
+    for (const g of this.groups) {
+      if ((g.lossAccum || 0) >= 3) {
+        this.pops.push({
+          id: ++this.popIdCounter,
+          x: g.x, y: g.y,
+          n: Math.round(g.lossAccum),
+          owner: g.owner,
+          age: 0,
+        });
+        g.lossAccum = 0;
+      }
+    }
+
     // Groups attacking enemy forts nearby (1:1 War of Dots Sieges)
     for (const g of this.groups) {
       if (g.count <= 0) continue;
       for (const base of this.bases) {
         if (base.owner === g.owner) continue;
         const dist = Math.hypot(g.x - base.x, g.y - base.y);
-        if (dist < 42) {
+        // Broken (routing) troops can't take a flag on the way past
+        if (dist < 42 && !g.isBroken) {
           // Capture the flag instantly
           const oldOwner = base.owner;
           base.owner = g.owner;
@@ -1039,11 +1094,36 @@ export class GameEngine {
   }
 
   checkVictory() {
+    // Guard: an uninitialized or mid-reload engine must never declare a winner
+    if (this.groups.length === 0 && this.bases.length === 0) return 0;
+
     const owners = new Set(this.bases.map(b => b.owner).filter(o => o !== 0));
     const hasPlayer = owners.has(1);
     const hasEnemy = owners.has(2);
-    if (!hasEnemy && this.groups.filter(g => g.owner === 2).length === 0) return 1;
-    if (!hasPlayer && this.groups.filter(g => g.owner === 1).length === 0) return 2;
+    if (!hasEnemy && this.groups.filter(g => g.owner === 2).length === 0) {
+      this.victoryReason = 'The Confederate army was destroyed and every flag taken.';
+      return 1;
+    }
+    if (!hasPlayer && this.groups.filter(g => g.owner === 1).length === 0) {
+      this.victoryReason = 'The Union army was destroyed and every flag taken.';
+      return 2;
+    }
+
+    // Battle clock: when time expires, flags decide the field
+    if (this.running && this.elapsed >= this.battleDuration) {
+      const flags1 = this.bases.filter(b => b.owner === 1).length;
+      const flags2 = this.bases.filter(b => b.owner === 2).length;
+      if (flags1 !== flags2) {
+        const w = flags1 > flags2 ? 1 : 2;
+        this.victoryReason = `Time expired holding ${Math.max(flags1, flags2)} of ${this.bases.length} flags.`;
+        return w;
+      }
+      // Flag tie → the army in better shape carries the day
+      const frac1 = this.startStrength[1] > 0 ? this.sideStrength(1) / this.startStrength[1] : 0;
+      const frac2 = this.startStrength[2] > 0 ? this.sideStrength(2) / this.startStrength[2] : 0;
+      this.victoryReason = 'Time expired with flags even — decided by the state of the armies.';
+      return frac1 >= frac2 ? 1 : 2;
+    }
     return 0;
   }
 }
