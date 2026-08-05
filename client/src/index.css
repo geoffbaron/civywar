@@ -488,23 +488,9 @@ body, html {
   color: white;
 }
 
-/* ─── Combat Animations ─── */
-@keyframes trace {
-  to { stroke-dashoffset: -90; }
-}
-.combat-streak {
-  animation: trace 0.15s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes smoke-fade {
-  0% { r: 2px; opacity: 0.8; }
-  100% { r: 12px; opacity: 0; }
-}
-.smoke-puff {
-  animation: smoke-fade 1.5s ease-out infinite;
-  pointer-events: none;
-}
+/* Combat effects — muzzle flame, shot and powder smoke — are authored by the
+   engine at the moment each volley goes off and animated from its own clock,
+   so there are no CSS keyframes for them. */
 
 /* ─── Terrain Tooltips ─── */
 .terrain-tooltip {

@@ -8,22 +8,43 @@ export const MAP_WIDTH = 1600;
 export const MAP_HEIGHT = 1000;
 
 // ─── Terrain type definitions (gameplay stats) ───
+//
+//  defense    — how much the ground shelters the men standing in it. Values
+//               are anchored on the period rule of thumb that a good field
+//               work was worth three or four attackers to one defender, and
+//               that a stone wall (Fredericksburg, the Angle) was the next
+//               best thing to one.
+//  offense    — how well a unit can deliver its own fire from that ground.
+//               Timber and standing corn broke up formations and hid the
+//               target; both cost far more in volume of fire than they gave
+//               back in cover.
+//  blocksSight— how thoroughly the feature interrupts a sightline drawn
+//               across it (0 = transparent, 1 = opaque). Woods, buildings
+//               and intervening ridges are what made Civil War armies blind.
 export const TERRAIN = {
-  grass:       { speed: 1.0,  defense: 1.0, offense: 1.0, passable: true,  label: 'Open Field' },
-  wheat:       { speed: 0.9,  defense: 1.0, offense: 1.0, passable: true,  label: 'Wheat Field' },
-  road:        { speed: 1.4,  defense: 0.8, offense: 1.0, passable: true,  label: 'Road' },
-  forest:      { speed: 0.4,  defense: 2.8, offense: 0.7, passable: true,  label: 'Woods' },
-  orchard:     { speed: 0.7,  defense: 1.2, offense: 0.9, passable: true,  label: 'Orchard' },
-  hill:        { speed: 0.7,  defense: 1.4, offense: 1.3, passable: true,  label: 'High Ground' },
-  creek:       { speed: 0.25, defense: 0.6, offense: 0.6, passable: true,  label: 'Creek' },
-  river:       { speed: 0.12, defense: 0.4, offense: 0.4, passable: false, label: 'River' },
-  marsh:       { speed: 0.3,  defense: 0.8, offense: 0.7, passable: true,  label: 'Marsh' },
-  fence_wood:  { speed: 0.7,  defense: 1.3, offense: 1.0, passable: true,  label: 'Wood Fence' },
-  fence_stone: { speed: 0.55, defense: 1.7, offense: 1.0, passable: true,  label: 'Stone Wall' },
-  building:    { speed: 0.2,  defense: 2.2, offense: 0.8, passable: true,  label: 'Building' },
-  trench:      { speed: 0.5,  defense: 2.0, offense: 0.9, passable: true,  label: 'Trench' },
-  sunken_road: { speed: 0.55, defense: 1.9, offense: 1.0, passable: true,  label: 'Sunken Road' },
-  bridge:      { speed: 1.2,  defense: 0.7, offense: 0.8, passable: true,  label: 'Bridge' },
+  grass:       { speed: 1.0,  defense: 1.0,  offense: 1.0,  passable: true,  blocksSight: 0,    label: 'Open Field' },
+  // Standing corn hid a man completely but he could not see to shoot either —
+  // Miller's Cornfield changed hands at ranges of a few dozen yards.
+  wheat:       { speed: 0.85, defense: 1.15, offense: 0.85, passable: true,  blocksSight: 0.45, label: 'Wheat Field' },
+  // The pike moved troops fast, and caught them in column when it mattered.
+  road:        { speed: 1.4,  defense: 0.8,  offense: 1.0,  passable: true,  blocksSight: 0,    label: 'Road' },
+  forest:      { speed: 0.45, defense: 1.9,  offense: 0.65, passable: true,  blocksSight: 1,    label: 'Woods' },
+  orchard:     { speed: 0.7,  defense: 1.25, offense: 0.85, passable: true,  blocksSight: 0.5,  label: 'Orchard' },
+  // A crest gives observation and lets guns command the ground below — and
+  // masks whatever is on its far slope.
+  hill:        { speed: 0.7,  defense: 1.4,  offense: 1.3,  passable: true,  blocksSight: 0.8,  label: 'High Ground' },
+  creek:       { speed: 0.25, defense: 0.6,  offense: 0.6,  passable: true,  blocksSight: 0,    label: 'Creek' },
+  river:       { speed: 0.12, defense: 0.4,  offense: 0.4,  passable: false, blocksSight: 0,    label: 'River' },
+  marsh:       { speed: 0.3,  defense: 0.8,  offense: 0.7,  passable: true,  blocksSight: 0.2,  label: 'Marsh' },
+  fence_wood:  { speed: 0.7,  defense: 1.35, offense: 1.0,  passable: true,  blocksSight: 0.1,  label: 'Wood Fence' },
+  fence_stone: { speed: 0.55, defense: 2.1,  offense: 1.0,  passable: true,  blocksSight: 0.2,  label: 'Stone Wall' },
+  building:    { speed: 0.2,  defense: 2.3,  offense: 0.8,  passable: true,  blocksSight: 1,    label: 'Building' },
+  // Prepared earthworks — by 1864 both armies dug in within hours of halting.
+  trench:      { speed: 0.5,  defense: 2.6,  offense: 0.95, passable: true,  blocksSight: 0.3,  label: 'Trench' },
+  // Bloody Lane: a ready-made rifle pit, invisible until you were on top of it.
+  sunken_road: { speed: 0.55, defense: 2.2,  offense: 1.0,  passable: true,  blocksSight: 0.4,  label: 'Sunken Road' },
+  // A bottleneck under fire — Burnside's Bridge cost four hours and 500 men.
+  bridge:      { speed: 1.2,  defense: 0.55, offense: 0.8,  passable: true,  blocksSight: 0,    label: 'Bridge' },
 };
 
 // ─── Feature geometry ───

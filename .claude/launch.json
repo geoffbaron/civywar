@@ -5,8 +5,15 @@
       "name": "civywar",
       "runtimeExecutable": "/opt/homebrew/bin/node",
       "runtimeArgs": ["node_modules/.bin/vite", "--port", "5174"],
-      "cwd": "/Users/geoffbaron/Desktop/civywar/client",
+      "cwd": "/Users/geoffbaron/civywar/client",
       "port": 5174
+    },
+    {
+      "name": "civywar-review",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5175"],
+      "cwd": "/private/tmp/claude-501/-Users-geoffbaron/0f238ca9-e4a4-46fc-82c2-90f0cc1e9620/scratchpad/civywar-review/client",
+      "port": 5175
     }
   ]
 }

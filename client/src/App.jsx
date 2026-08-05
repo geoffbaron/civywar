@@ -19,6 +19,27 @@ const initSound = () => {
 
 const engine = new GameEngine();
 
+// Round a closed ray-cast outline into a smooth curve. A sightline does not
+// end in a razor-straight facet, and the eye reads a soft horizon far better
+// than a polygon.
+const smoothClosedPath = (pts) => {
+  const n = pts.length;
+  if (n < 3) return '';
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const f = (v) => v.toFixed(1);
+  const start = mid(pts[n - 1], pts[0]);
+  let d = `M${f(start[0])},${f(start[1])}`;
+  for (let i = 0; i < n; i++) {
+    const cur = pts[i];
+    const m = mid(cur, pts[(i + 1) % n]);
+    d += ` Q${f(cur[0])},${f(cur[1])} ${f(m[0])},${f(m[1])}`;
+  }
+  return d + 'Z';
+};
+
+// Debug handle for inspecting a running battle from the console.
+if (typeof window !== 'undefined') window.DBG = { engine };
+
 const FORT_HIT = 24;
 
 // Realistic mode uses formation blocks in data; expand them into many smaller units
@@ -124,7 +145,7 @@ const splitFormationUnits = (units, enabled, phaseKey) => {
 };
 
 function App() {
-  const [gameState, setGameState] = useState({ bases: [], groups: [], dyingGroups: [], selectedGroupId: null });
+  const [gameState, setGameState] = useState({ bases: [], groups: [], dyingGroups: [], effects: [], smoke: [], contacts: [], selectedGroupId: null });
   const [dragState, setDragState] = useState(null);
   const [victory, setVictory] = useState(0);
   const [hoverInfo, setHoverInfo] = useState(null);
@@ -226,6 +247,7 @@ function App() {
     latLngToPixelRef.current = info.latLngToPixel;
     pixelToLatLngRef.current = info.pixelToLatLng;
     mapInstanceRef.current   = info.map;
+    if (typeof window !== 'undefined') window.DBG.map = info.map;
 
     engine.setProjections(info.latLngToPixel, info.pixelToLatLng);
     refZoomRef.current = info.refZoom;
@@ -371,6 +393,12 @@ function App() {
         bases: engine.bases.map(b => ({ ...b })),
         groups: engine.groups.map(g => ({ ...g })),
         dyingGroups: engine.dyingGroups.map(g => ({ ...g })),
+        effects: engine.effects,
+        smoke: engine.smoke,
+        // Enemy positions last reported by our scouts, still on the staff map
+        // even though nobody has eyes on them now.
+        contacts: Array.from(engine.contacts[1].values())
+          .filter(c => !engine.groups.some(g => g.id === c.id && g.visibleTo1)),
         selectedGroupIds: new Set(engine.selectedGroupIds),
       });
       const v = engine.checkVictory();
@@ -423,9 +451,10 @@ function App() {
     // Check if clicked directly on a player unit — find closest within hit radius
     let clickedGroup = null;
     let closestDist = Infinity;
-    const hitRadius = Math.max(15, 35 * zoomScale);
     for (const g of engine.groups) {
       if (g.owner === 1) {
+        // Generous grab radius around the unit's own footprint.
+        const hitRadius = Math.max(18, engine.getFrontagePx(g) * 0.7);
         const dist = Math.hypot(pos.x - g.x, pos.y - g.y);
         if (dist <= hitRadius && dist < closestDist) {
           closestDist = dist;
@@ -451,8 +480,8 @@ function App() {
       const g = engine.groups.find(gr => gr.id === gid);
       if (g) {
         const dist = Math.hypot(pos.x - g.x, pos.y - g.y);
-        // Fixed selection ring radius instead of weapon range which was too large
-        if (dist <= Math.max(20, 45 * zoomScale)) {
+        // Start a march by dragging from just outside the unit's footprint.
+        if (dist <= Math.max(24, engine.getFrontagePx(g) * 0.9)) {
           setDragState({ type: 'path', startX: pos.x, startY: pos.y, points: [pos], lastPointTime: performance.now() });
           return;
         }
@@ -499,11 +528,11 @@ function App() {
     }
     // Unit hover — check if mouse is over any visible unit
     if (!dragState) {
-      const hitRadius = 18 * zoomScale;
       let foundUnit = null;
       for (const g of gameState.groups) {
         if (g.count <= 0) continue;
         if (g.owner !== 1 && !g.visible) continue; // fog of war
+        const hitRadius = Math.max(14, engine.getFrontagePx(g) * 0.55);
         const dx = pos.x - g.x, dy = pos.y - g.y;
         if (dx * dx + dy * dy < hitRadius * hitRadius) {
           foundUnit = g;
@@ -855,105 +884,114 @@ function App() {
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
+          <filter id="muzzle-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="2.2" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          {/* Dirty white powder smoke — warm, not grey */}
+          <radialGradient id="smoke-grad">
+            <stop offset="0%" stopColor="#faf7ee" stopOpacity="0.8" />
+            <stop offset="45%" stopColor="#ece7d8" stopOpacity="0.5" />
+            <stop offset="75%" stopColor="#ded8c6" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#d4cdb8" stopOpacity="0" />
+          </radialGradient>
+          {/* Muzzle flash core: white-hot centre bleeding to powder orange */}
+          <radialGradient id="flash-grad">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="35%" stopColor="#ffe9a8" stopOpacity="0.95" />
+            <stop offset="70%" stopColor="#ff9a2e" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#e8641a" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="blast-grad">
+            <stop offset="0%" stopColor="#fffdf2" stopOpacity="0.95" />
+            <stop offset="40%" stopColor="#ffd067" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#ff8a1e" stopOpacity="0" />
+          </radialGradient>
           {/* Arrowhead markers for PBS-style movement arrows — scale with zoom */}
           {/* (arrowheads now drawn manually as polygons for correct direction) */}
         </defs>
 
-        {/* Fog of War — dark overlay covering areas outside friendly sight */}
+        {/* ── Fog of War ──
+            The lit area is the actual shape of what our troops can see:
+            rays cut short by timber, buildings and intervening crests, so
+            woods and ridges throw genuine blind spots across the field. */}
         {(() => {
-          const fg = gameState.groups.filter(g => g.owner === 1 && g.count > 0);
+          const fg = gameState.groups.filter(g => g.owner === 1 && g.count > 0 && g.sight);
           if (!fg.length) return null;
-          // Compute terrain-adjusted sight radius for each unit
-          const sightRadii = fg.map(g => {
-            let sight = engine.getSightRange(g.unitType);
-            const t = engine.getTerrainAt(g.x, g.y);
-            // Match engine's computeVisibility observer modifiers
-            if (t.label === 'High Ground') {
-              sight *= g.unitType === 'commander' ? 2.0
-                     : g.unitType === 'cannon' ? 1.8
-                     : g.unitType === 'cavalry' ? 1.6
-                     : 1.5;
-            }
-            if (t.label === 'Woods') sight *= 0.35;
-            if (t.label === 'Building') sight *= 0.5;
-            if (t.label === 'Marsh') sight *= 0.5;
-            if (t.label === 'Creek' || t.label === 'Sunken Road') sight *= 0.55;
-            if (t.label === 'Road') sight *= 1.1;
-            return sight * zoomScale;
-          });
           return (
             <>
               <defs>
-                {fg.map((g, idx) => {
-                  const r = sightRadii[idx];
-                  return (
-                    <radialGradient key={`rg-${g.id}`} id={`rg-${g.id}`}
-                      cx={g.x} cy={g.y} r={r} gradientUnits="userSpaceOnUse">
-                      <stop offset="50%" stopColor="black" stopOpacity="1" />
-                      <stop offset="80%" stopColor="black" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="black" stopOpacity="0" />
-                    </radialGradient>
-                  );
-                })}
+                {fg.map(g => (
+                  <radialGradient key={`rg-${g.id}`} id={`rg-${g.id}`}
+                    cx={g.x} cy={g.y} r={g.sight.maxR} gradientUnits="userSpaceOnUse">
+                    <stop offset="55%" stopColor="black" stopOpacity="1" />
+                    <stop offset="82%" stopColor="black" stopOpacity="0.45" />
+                    <stop offset="100%" stopColor="black" stopOpacity="0" />
+                  </radialGradient>
+                ))}
+                <filter id="fog-soft" x="-25%" y="-25%" width="150%" height="150%">
+                  <feGaussianBlur stdDeviation="7" />
+                </filter>
                 <mask id="fog-mask">
                   <rect x={-mapWidth} y={-mapHeight} width={mapWidth * 3} height={mapHeight * 3} fill="white" />
-                  {fg.map((g, idx) => {
-                    const r = sightRadii[idx];
-                    return (
-                      <ellipse key={`fm-${g.id}`}
-                        cx={g.x} cy={g.y} rx={r} ry={r}
+                  <g filter="url(#fog-soft)">
+                    {fg.map(g => (
+                      <path key={`fm-${g.id}`} d={smoothClosedPath(g.sight.pts)}
                         fill={`url(#rg-${g.id})`} />
-                    );
-                  })}
+                    ))}
+                  </g>
                 </mask>
               </defs>
               <rect x={-mapWidth} y={-mapHeight} width={mapWidth * 3} height={mapHeight * 3}
-                fill="rgba(15,12,8,0.50)" mask="url(#fog-mask)"
+                fill="rgba(14,11,7,0.52)" mask="url(#fog-mask)"
                 pointerEvents="none" />
             </>
           );
         })()}
 
-
-
-        {/* Combat Streaks and Smoke */}
-        {gameState.groups.filter(g => g.targetId && engine.time - (g.lastFired || 0) < 150).flatMap(g => {
-          const target = gameState.groups.find(t => t.id === g.targetId);
-          if (!target) return [];
-
-          const dx = target.x - g.x;
-          const dy = target.y - g.y;
-          const dist = Math.hypot(dx, dy);
-          const ux = dx / dist;  // unit vector toward target
-          const uy = dy / dist;
-          // Perpendicular axis (along the unit bar)
-          const px = -uy;
-          const py = ux;
-
-          const barWidth = g.unitType === 'cannon' ? 20 : g.unitType === 'cavalry' ? 32 : 40;
-          const numShots = g.unitType === 'cannon' ? 2 : 4;
-
-          return Array.from({ length: numShots }, (_, i) => {
-            // Spread muzzle points evenly across bar with slight random jitter
-            const t_bar = (i / (numShots - 1) - 0.5) * barWidth + (Math.random() - 0.5) * 8;
-            const mx = g.x + px * t_bar + ux * 14;
-            const my = g.y + py * t_bar + uy * 14;
-            // Slight angular spray on the target end
-            const spread = barWidth * 0.3;
-            const tx = target.x + px * (Math.random() - 0.5) * spread;
-            const ty = target.y + py * (Math.random() - 0.5) * spread;
-            const opacity = 0.5 + Math.random() * 0.4;
-            return (
-              <g key={`combat-${g.id}-${i}`}>
-                <line x1={mx} y1={my} x2={tx} y2={ty}
-                  stroke={`rgba(255,255,255,${opacity})`} strokeWidth={1 + Math.random()}
-                  strokeDasharray="30 60" className="combat-streak" />
-                <circle cx={mx} cy={my} r={2 + Math.random() * 1.5} fill="rgba(220,210,180,0.8)"
-                  className="smoke-puff" />
-              </g>
-            );
-          });
+        {/* Last-known enemy positions — the pencil marks on the staff map.
+            Scouts reported them; nobody has eyes on them now. */}
+        {(gameState.contacts || []).map(c => {
+          const fade = Math.max(0.12, 1 - c.age / 22);
+          // Drawn at the frontage the unit had when it was last reported.
+          const w = engine.getFrontagePx(c), h = engine.getDepthPx(c);
+          return (
+            <g key={`contact-${c.id}`} pointerEvents="none" opacity={fade * 0.65}>
+              <rect x={c.x - w / 2} y={c.y - h / 2} width={w} height={h} rx={2}
+                fill="none" stroke="#b8503c" strokeWidth={1.2} strokeDasharray="3 3" />
+              <text x={c.x} y={c.y - h / 2 - 3} textAnchor="middle" fill="#c8705c"
+                fontSize="8" fontFamily="'Georgia', serif" fontStyle="italic">
+                last seen
+              </text>
+            </g>
+          );
         })}
+
+
+
+        {/* ── Powder smoke ──
+            Black powder threw up enormous banks of white smoke that hung
+            over the firing line and blinded both sides. It drifts, thickens
+            where the fighting is hottest, and the engine treats it as a real
+            obstruction to sight and fire — not just decoration. */}
+        {(gameState.smoke || []).length > 0 && (
+          <g pointerEvents="none">
+            {gameState.smoke.map((s, i) => {
+              const age = Math.min(1, s.t / s.life);
+              const r = s.r0 + (s.r - s.r0) * (0.35 + age * 1.25);
+              const alpha = (1 - age) * (1 - age) * (0.55 + s.density);
+              if (alpha < 0.02) return null;
+              const j = s.seed * 6 - 3;
+              return (
+                <g key={`smoke-${i}`} opacity={Math.min(0.9, alpha)}>
+                  <circle cx={s.x} cy={s.y} r={r} fill="url(#smoke-grad)" />
+                  <circle cx={s.x + j} cy={s.y - r * 0.28} r={r * 0.7} fill="url(#smoke-grad)" />
+                  <circle cx={s.x - j * 0.7} cy={s.y + r * 0.2} r={r * 0.55} fill="url(#smoke-grad)" />
+                </g>
+              );
+            })}
+          </g>
+        )}
 
 
         {/* Drag arrow from fort */}
@@ -1082,6 +1120,19 @@ function App() {
                 fill={col} stroke={colBr} strokeWidth={1} filter="url(#shadow)" />
               {/* Base marker dot */}
               <circle cx={base.x} cy={base.y + 12} r={4} fill="#6a6050" stroke="#444" strokeWidth={1} />
+              {/* Contested — the position has to be occupied and held, not
+                  just ridden past. An enemy still in the works stops the clock. */}
+              {base.capture > 0 && (
+                <>
+                  <circle cx={base.x} cy={base.y + 12} r={13}
+                    fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={3} />
+                  <circle cx={base.x} cy={base.y + 12} r={13}
+                    fill="none" stroke={ownerColorBright(base.captureBy)} strokeWidth={3}
+                    strokeDasharray={`${Math.max(0, base.capture) * 81.7} 81.7`}
+                    strokeLinecap="round"
+                    transform={`rotate(-90, ${base.x}, ${base.y + 12})`} />
+                </>
+              )}
               {/* Label */}
               <text x={base.x} y={base.y + 30} textAnchor="middle" fill="#bbb"
                 fontSize="9" fontFamily="'Georgia', serif" pointerEvents="none"
@@ -1118,12 +1169,12 @@ function App() {
 
           // Commander — same bar/count/morale format as cavalry, but gold with aura ring
           if (group.unitType === 'commander') {
-            const cw = 26 * zoomScale, ch = 7 * zoomScale;
+            const cw = engine.getFrontagePx(group), ch = engine.getDepthPx(group);
             const validCount = isNaN(group.count) ? 1 : Math.max(0, group.count);
             return (
               <g key={`group-${group.id}`}>
                 {/* Aura ring */}
-                 <circle cx={group.x} cy={group.y} r={engine.constructor.COMMANDER_AURA * zoomScale}
+                 <circle cx={group.x} cy={group.y} r={engine.getCommanderAura()}
                   fill="none"
                   stroke={isUnion ? 'rgba(220,180,40,0.15)' : 'rgba(200,100,30,0.15)'}
                   strokeWidth={1.5} strokeDasharray="6 4" pointerEvents="none" />
@@ -1167,12 +1218,10 @@ function App() {
           }
 
 
-          // Size scales with troop count AND map zoom level
-          const bs = { infantry: { w: 34, h: 8 }, cavalry: { w: 26, h: 7 }, cannon: { w: 18, h: 10 } }[group.unitType];
-          const validCount = isNaN(group.count) ? 1 : Math.max(1, group.count);
-          const countFactor = Math.max(0.6, Math.min(1.0, validCount / 55));
-          const sw = bs.w * countFactor * zoomScale;
-          const sh = bs.h * countFactor * zoomScale;
+          // Drawn at the unit's real frontage on the ground — a 400-man
+          // regiment covers about 250 yards of line, a battery about 120.
+          const sw = engine.getFrontagePx(group);
+          const sh = engine.getDepthPx(group);
 
           const c = colors[group.unitType] || colors.infantry;
           const o = outlines[group.unitType] || outlines.infantry;
@@ -1187,7 +1236,11 @@ function App() {
                   <rect x={group.x - sw / 2 - 4*zoomScale} y={group.y - sh / 2 - 4*zoomScale} width={sw + 8*zoomScale} height={sh + 8*zoomScale}
                     fill="none" stroke="#ffd700" strokeWidth={2} strokeDasharray="4 2"
                     transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} />
-                  <circle cx={group.x} cy={group.y} r={engine.getRange(group.unitType) * zoomScale} fill="rgba(0,0,0,0.04)" stroke="rgba(80,60,40,0.5)" strokeWidth={1.5} strokeDasharray="4 4" pointerEvents="none" />
+                  {/* Effective fire range on this ground — woods and low
+                      places choke it right down, a ridge opens it out. */}
+                  <circle cx={group.x} cy={group.y} r={engine.getEffectiveRange(group)}
+                    fill="rgba(0,0,0,0.04)" stroke="rgba(80,60,40,0.5)" strokeWidth={1.5}
+                    strokeDasharray="4 4" pointerEvents="none" />
                 </>
               )}
               {/* Unit bar */}
@@ -1201,8 +1254,8 @@ function App() {
               {/* Inner detail marks — stripes for infantry showing ranks */}
               {group.unitType === 'infantry' && sw > 18 && (
                 <g transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} pointerEvents="none">
-                  {[...Array(Math.max(2, Math.floor(sw / 8)))].map((_, si) => {
-                    const xOff = -sw / 2 + 5 + si * (sw / Math.floor(sw / 8));
+                  {[...Array(Math.max(2, Math.min(24, Math.floor(sw / 8))))].map((_, si, arr) => {
+                    const xOff = -sw / 2 + 5 + si * (sw / arr.length);
                     return (
                       <line key={si}
                         x1={group.x + xOff} y1={group.y - sh / 2}
@@ -1235,41 +1288,19 @@ function App() {
                 {group.isBroken ? " 🏳️" : ""}
               </text>
               
-              {/* Muzzle Flashes when engaged (Volley Firing) */}
+              {/* Recoil — the line rocks back on the discharge. The flame and
+                  smoke themselves are drawn by the volley layer above. */}
               {group.fireTimer > 0 && (
-                <g transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} pointerEvents="none">
-                  {group.unitType === 'cannon' ? (
-                     // Big explosive cannon flash
-                     Math.random() > 0.3 && (
-                       <g filter="url(#glow)">
-                         <path d={`M${group.x - 8},${group.y - sh/2} L${group.x + 8},${group.y - sh/2} L${group.x},${group.y - sh/2 - 20} Z`} fill="#ffaa00" />
-                         <circle cx={group.x} cy={group.y - sh/2 - 10} r={14*zoomScale} fill="rgba(255,200,50,0.8)" />
-                         <circle cx={group.x} cy={group.y - sh/2 - 16} r={8*zoomScale} fill="rgba(255,255,255,0.9)" />
-                         <ellipse cx={group.x} cy={group.y - sh/2 - 20} rx={25*zoomScale} ry={15*zoomScale} fill="rgba(220, 220, 220, 0.5)" filter="blur(3px)" />
-                       </g>
-                     )
-                  ) : (
-                    // Infantry/Cavalry cracking musket flashes along the front rank
-                    <g>
-                      {/* Gunsmoke cloud */}
-                      <ellipse cx={group.x} cy={group.y - sh/2 - 4} rx={sw/2 + 2} ry={6*zoomScale} fill="rgba(220, 230, 240, 0.35)" filter="blur(2px)" />
-                      {/* Individual musket flashes */}
-                      {[...Array(Math.max(1, Math.floor(sw / 5)))].map((_, i) => {
-                        if (Math.random() > 0.45) return null; // 55% chance to flash per slot per frame
-                        const flashX = group.x - sw/2 + 2 + i * 5 + (Math.random() * 4 - 2);
-                        const flashY = group.y - sh/2 - (Math.random() * 5 + 1);
-                        const r = (Math.random() * 2.5 + 1.5) * zoomScale; 
-                        return (
-                          <circle key={i} cx={flashX} cy={flashY} r={r} 
-                            fill={Math.random() > 0.3 ? '#ffefaa' : '#ff7700'} 
-                            opacity={Math.random() * 0.5 + 0.5} 
-                            filter="url(#glow)"
-                          />
-                        );
-                      })}
-                    </g>
-                  )}
-                </g>
+                <rect x={group.x - sw / 2} y={group.y - sh / 2} width={sw} height={sh} rx={2}
+                  fill="rgba(255,228,160,0.35)" pointerEvents="none"
+                  transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`} />
+              )}
+
+              {/* Out of cartridges — the unit is in line but cannot answer */}
+              {group.ammo <= 0 && group.unitType !== 'commander' && (
+                <text x={group.x} y={group.y + sh / 2 + 9} textAnchor="middle" fill="#e8a33c"
+                  fontSize="8" fontFamily="'Georgia', serif" pointerEvents="none"
+                  style={{ textShadow: '1px 1px 2px #000' }}>NO AMMO</text>
               )}
 
               {/* Morale — bar dims as morale drops */}
@@ -1306,7 +1337,7 @@ function App() {
           };
 
           if (group.unitType === 'commander') {
-            const cw = 26 * zoomScale, ch = 7 * zoomScale;
+            const cw = engine.getFrontagePx(group), ch = engine.getDepthPx(group);
             return (
               <g key={`dying-${group.id}`} opacity={fadePct} pointerEvents="none">
                 <rect x={group.x - cw/2} y={group.y - ch/2} width={cw} height={ch} rx={2}
@@ -1317,11 +1348,8 @@ function App() {
             );
           }
 
-          const bs = { infantry: { w: 34, h: 8 }, cavalry: { w: 26, h: 7 }, cannon: { w: 18, h: 10 } }[group.unitType] || { w: 34, h: 8 };
-          const validCount = isNaN(group.count) ? 1 : Math.max(1, Math.abs(group.count) || 1);
-          const countFactor = Math.max(0.6, Math.min(1.0, validCount / 55));
-          const sw = bs.w * countFactor * zoomScale;
-          const sh = bs.h * countFactor * zoomScale;
+          const sw = engine.getFrontagePx(group);
+          const sh = engine.getDepthPx(group);
           const c = colors[group.unitType] || colors.infantry;
           const o = outlines[group.unitType] || outlines.infantry;
 
@@ -1332,6 +1360,122 @@ function App() {
                 fill={c} stroke={o} strokeWidth={1}
                 transform={`rotate(${angleDeg}, ${group.x}, ${group.y})`}
                 filter="url(#shadow)" />
+            </g>
+          );
+        })}
+
+        {/* ── Volley fire ──
+            Every discharge is authored once by the engine at the moment the
+            volley goes off, so a volley reads as one crashing, rippling
+            sheet of flame down the line rather than random per-frame sparks. */}
+        {(gameState.effects || []).map(e => {
+          const t = e.t;
+
+          // Strike of the volley on the receiving line — dirt, splinters, men down.
+          if (e.kind === 'impact') {
+            const a = 1 - t / e.life;
+            if (a <= 0) return null;
+            return (
+              <g key={`fx-${e.id}`} pointerEvents="none" opacity={a}>
+                {e.spurts.map((s, i) => {
+                  const lt = t - s.delay;
+                  if (lt < 0) return null;
+                  const grow = 1 + lt * 6;
+                  return (
+                    <circle key={i} cx={e.x + s.ox} cy={e.y + s.oy} r={s.r * grow}
+                      fill="rgba(84,66,46,0.5)" />
+                  );
+                })}
+              </g>
+            );
+          }
+
+          const isCannon = e.kind === 'cannon';
+          // Direction of the muzzles, with each flash's own slight deviation.
+          const lance = (f) => {
+            const c = Math.cos(f.spread), s = Math.sin(f.spread);
+            const dx = e.ux * c - e.uy * s;
+            const dy = e.ux * s + e.uy * c;
+            const local = t - f.delay;
+            const k = Math.max(0, 1 - local / (isCannon ? 0.24 : 0.17));
+            if (local < 0 || k <= 0) return null;
+            const len = f.len * (0.5 + k * 0.5);
+            const hw = f.size * (isCannon ? 0.55 : 0.5) * k;
+            const tipX = f.x + dx * len, tipY = f.y + dy * len;
+            const nx = -dy, ny = dx;
+            return { dx, dy, k, len, hw, tipX, tipY, nx, ny };
+          };
+
+          return (
+            <g key={`fx-${e.id}`} pointerEvents="none">
+              {/* The whole face lights up for an instant — at a distance this
+                  glare along the line is what you actually saw of a volley */}
+              {t < 0.3 && (() => {
+                const gx = e.x + e.ux * e.depth * 0.5;
+                const gy = e.y + e.uy * e.depth * 0.5;
+                return (
+                  <ellipse cx={gx} cy={gy}
+                    rx={e.frontage * 0.58} ry={e.depth * (isCannon ? 1.0 : 0.7)}
+                    transform={`rotate(${Math.atan2(e.py, e.px) * 180 / Math.PI}, ${gx}, ${gy})`}
+                    fill="url(#blast-grad)"
+                    opacity={(1 - t / 0.3) * (isCannon ? 0.7 : 0.38)} />
+                );
+              })()}
+
+              {/* The sheet of ball going downrange */}
+              {t < 0.34 && e.flashes.map((f, i) => {
+                const local = t - f.delay;
+                if (local < 0 || local > 0.26) return null;
+                const travel = Math.min(1, local / 0.26);
+                const reach = e.dist * 0.9;
+                const c = Math.cos(f.spread), s = Math.sin(f.spread);
+                const dx = e.ux * c - e.uy * s;
+                const dy = e.ux * s + e.uy * c;
+                const tail = Math.max(0, travel - 0.22);
+                return (
+                  <line key={`s${i}`}
+                    x1={f.x + dx * reach * tail} y1={f.y + dy * reach * tail}
+                    x2={f.x + dx * reach * travel} y2={f.y + dy * reach * travel}
+                    stroke={isCannon ? 'rgba(255,238,196,0.8)' : 'rgba(255,250,232,0.5)'}
+                    strokeWidth={(isCannon ? 0.9 : 0.5) * e.scale}
+                    strokeLinecap="round"
+                    opacity={(1 - travel) * 0.85} />
+                );
+              })}
+
+              {/* Muzzle flame — a tapered jet from each company, white at the
+                  root and bleeding to powder orange at the tip */}
+              {e.flashes.map((f, i) => {
+                const L = lance(f);
+                if (!L) return null;
+                const rootX = f.x - L.dx * f.size * 0.5;
+                const rootY = f.y - L.dy * f.size * 0.5;
+                return (
+                  <g key={`f${i}`} opacity={Math.min(1, L.k * 1.4)}>
+                    <path
+                      d={`M${rootX + L.nx * L.hw},${rootY + L.ny * L.hw}` +
+                         ` Q${f.x + L.nx * L.hw * 1.15},${f.y + L.ny * L.hw * 1.15} ${L.tipX},${L.tipY}` +
+                         ` Q${f.x - L.nx * L.hw * 1.15},${f.y - L.ny * L.hw * 1.15} ${rootX - L.nx * L.hw},${rootY - L.ny * L.hw} Z`}
+                      fill={isCannon ? '#ffc247' : '#ffd071'} />
+                    <path
+                      d={`M${rootX + L.nx * L.hw * 0.5},${rootY + L.ny * L.hw * 0.5}` +
+                         ` L${f.x + L.dx * L.len * 0.45},${f.y + L.dy * L.len * 0.45}` +
+                         ` L${rootX - L.nx * L.hw * 0.5},${rootY - L.ny * L.hw * 0.5} Z`}
+                      fill="#fffbe8" />
+                    <circle cx={f.x} cy={f.y} r={f.size * (1.05 + L.k * 0.7)}
+                      fill="url(#flash-grad)" opacity={0.55} />
+                  </g>
+                );
+              })}
+
+              {/* Concussion ring — you could feel a battery fire from a mile off */}
+              {isCannon && t < 0.6 && (
+                <circle cx={e.x + e.ux * e.frontage * 0.35} cy={e.y + e.uy * e.frontage * 0.35}
+                  r={(8 + t * 150) * e.scale}
+                  fill="none" stroke="rgba(255,250,235,0.5)"
+                  strokeWidth={(1 - t / 0.6) * 2.4 * e.scale}
+                  opacity={(1 - t / 0.6) * 0.65} />
+              )}
             </g>
           );
         })}
@@ -1391,12 +1535,16 @@ function App() {
             if (t.offense !== 1.0) stats.push({ label: 'Atk', pct: Math.round((t.offense - 1) * 100) });
           }
 
-          const range = engine.getRange(g.unitType);
-          const sight = engine.getSightRange(g.unitType);
+          // Real distances, in yards, at the current map scale — including
+          // what this patch of ground does to the unit's effective range.
+          const toYards = (px) => Math.round(engine.pxToM(px) * 1.0936 / 25) * 25;
+          const range = toYards(engine.getEffectiveRange(g));
+          const sight = toYards(engine.observerSight(g));
+          const ammo = Math.round(g.ammo || 0);
           const titleText = `${typeIcon} ${g.label || typeLabel}`;
-          const detailText = `${side} — ${count} men  |  Range ${range}  |  Sight ${sight}`;
-          const boxW = Math.max(titleText.length * 7, detailText.length * 5.2, 160);
-          const boxH = 58 + (stats.length ? 13 : 0);
+          const detailText = `${side} — ${count} men  |  Range ${range} yd  |  Sight ${sight} yd`;
+          const boxW = Math.max(titleText.length * 7, detailText.length * 5.2, 190);
+          const boxH = 70 + (stats.length ? 13 : 0);
           const tx = Math.min(hoverUnit.x, mapWidth - boxW / 2 - 5);
           const ty = hoverUnit.y - boxH - 14;
 
@@ -1412,7 +1560,7 @@ function App() {
               {/* Side + count */}
               <text x={tx} y={ty + 26} textAnchor="middle" fill="#ccc"
                 fontSize="9" fontFamily="'Georgia', serif">
-                {side} — {count} men  |  Range {range}  |  Sight {sight}
+                {side} — {count} men  |  Range {range} yd  |  Sight {sight} yd
               </text>
               {/* Morale bar */}
               <rect x={tx - boxW / 2 + 8} y={ty + 32} width={boxW - 16} height={5} rx={2}
@@ -1423,9 +1571,22 @@ function App() {
                 fontSize="8.5" fontFamily="'Georgia', serif">
                 Morale {morale}%{g.isBroken ? ' — BROKEN' : ''}
               </text>
+              {/* Cartridge box — a regiment shot dry has to go to the rear */}
+              {g.unitType !== 'commander' && (
+                <>
+                  <rect x={tx - boxW / 2 + 8} y={ty + 53} width={boxW - 16} height={4} rx={2}
+                    fill="rgba(255,255,255,0.1)" />
+                  <rect x={tx - boxW / 2 + 8} y={ty + 53} width={Math.max(0, (boxW - 16) * Math.min(1, ammo / 40))} height={4} rx={2}
+                    fill={ammo > 12 ? '#c9a24a' : '#ef8855'} />
+                  <text x={tx} y={ty + 66} textAnchor="middle" fill={ammo > 12 ? '#c9a24a' : '#ef8855'}
+                    fontSize="8.5" fontFamily="'Georgia', serif">
+                    {ammo > 0 ? `${ammo} rounds` : 'Out of cartridges'}
+                  </text>
+                </>
+              )}
               {/* Terrain bonuses */}
               {stats.length > 0 && (
-                <text x={tx} y={ty + 57} textAnchor="middle"
+                <text x={tx} y={ty + 78} textAnchor="middle"
                   fontSize="8" fontFamily="'Georgia', serif">
                   {stats.map((s, i) => {
                     const color = s.pct > 0 ? '#8ddf6a' : '#ef8855';
@@ -1461,7 +1622,7 @@ function App() {
           },
           {
             title: 'The Battlefield',
-            body: 'This is the battlefield map. Your blue units and flags are on one side, the enemy\'s red units on the other. Colored terrain zones show forests, roads, rivers, and more.',
+            body: 'You see only what your troops can see. Woods, buildings and ridges throw real blind spots, and faded \u2018last seen\u2019 marks show where scouts last reported the enemy. Cavalry see more than twice as far as infantry \u2014 screen with them or you will be surprised.',
             target: 'map-area',
             position: 'left',
           },
@@ -1484,20 +1645,20 @@ function App() {
             position: 'right',
           },
           {
-            title: 'Combat & Flanking',
-            body: 'Units fire automatically when stationary and in range. Attack enemies from the side or rear for bonus damage. Cannons are devastating vs. stationary foes but weak against moving targets.',
+            title: 'Fire & Flanking',
+            body: 'Troops fire in volleys, but only while halted — a line cannot march and shoot. Fire into an enemy\'s flank or rear rakes his whole line and breaks his nerve far faster than it kills. Crossing open ground in front of guns is how armies were ruined.',
             target: 'map-area',
             position: 'left',
           },
           {
-            title: 'Morale & Your Commander',
-            body: 'Units under fire lose morale and darken. If morale drops too low, they break and flee! Keep your Commander nearby — his aura boosts surrounding troops\' morale.',
+            title: 'Morale, Ammunition & Your Commander',
+            body: 'Losses cost morale, and around a third of a unit\'s strength is enough to break it — broken units run for the rear and will not take orders. Every unit carries 40 rounds; shoot it dry and it must fall back on a flag to resupply. Keep your Commander close: he steadies the line and can rally men who have already run.',
             target: 'map-area',
             position: 'left',
           },
           {
-            title: 'Capture the Flag!',
-            body: 'Move any unit onto an enemy flag to capture it instantly. This boosts your entire army\'s morale and crushes the enemy\'s. Capture all flags to win!',
+            title: 'Taking Ground',
+            body: 'A position has to be occupied and held, not ridden past. Sit on an enemy flag with no defender contesting it and it changes hands in a few seconds. Lose your positions and most of your army and you have been beaten — battles end when a command quits the field.',
             target: 'map-area',
             position: 'left',
           },
@@ -1640,26 +1801,65 @@ function App() {
             
             <div className="rules-content">
               <h3>The Objective</h3>
-              <p>Capture all enemy flags or eliminate all enemy troops to win the battle.</p>
-              
+              <p>Take and hold the enemy's positions, or break his army. A command
+                 that has lost its ground and better than half its strength quits the
+                 field — battles are not fought to the last man.</p>
+
               <h3>Controls</h3>
               <ul>
                 <li><strong>Select:</strong> Click a single unit, or drag a box over multiple units.</li>
                 <li><strong>Move:</strong> Click and drag from your selected units to draw a movement path.</li>
+                <li><strong>Rally:</strong> Broken units will not take orders. Get your commander near them.</li>
               </ul>
-              
-              <h3>Tactics & Combat</h3>
+
+              <h3>Seeing the Field</h3>
               <ul>
-                <li><strong>Combat:</strong> When units collide, they engage in grinding melee combat.</li>
-                <li><strong>Capture the Flag:</strong> Move a unit onto an enemy flag to capture it — boosts your army's morale and crushes theirs.</li>
-                <li><strong>Terrain:</strong> Use roads to move 40% faster. Avoid crossing the river!</li>
+                <li><strong>You fight half-blind.</strong> Woods, buildings and ridges cast real
+                    blind spots. Whole corps went missing in the Wilderness.</li>
+                <li><strong>Cavalry are your eyes</strong> — they see more than twice as far as
+                    infantry. Screen with them or you will be surprised.</li>
+                <li><strong>Get on the high ground.</strong> A crest is worth more for what it
+                    lets you see than for what it lets you shoot.</li>
+                <li><strong>Last-seen markers</strong> show where scouts last reported the enemy.
+                    They fade — and the enemy moves.</li>
               </ul>
-              
+
+              <h3>Fire &amp; Morale</h3>
+              <ul>
+                <li><strong>Volleys, not streams.</strong> A line fires in ordered volleys.
+                    Firepower scales with the number of muskets you have in line.</li>
+                <li><strong>Stand to fire.</strong> Troops cannot fire while marching, and men
+                    crossing open ground can neither lie down nor use cover.</li>
+                <li><strong>Enfilade wins fights.</strong> Fire into a flank or rear rakes the
+                    whole line and breaks nerve faster than it kills.</li>
+                <li><strong>Cartridge boxes hold 40 rounds.</strong> A unit shot dry must fall
+                    back on a friendly flag to resupply.</li>
+                <li><strong>Powder smoke blinds both sides</strong> and thickens where the
+                    fighting is hottest.</li>
+                <li><strong>Units break, they do not die.</strong> Around a third of losses is
+                    enough. Broken units run for the rear and can be rallied.</li>
+              </ul>
+
               <h3>Troop Types</h3>
               <ul>
-                <li><strong>Infantry (⚔):</strong> Balanced fighters. The backbone of your army.</li>
-                <li><strong>Cavalry (♞):</strong> Fast flankers. Weak in direct fights, perfect for capturing undefended flags.</li>
-                <li><strong>Cannons (☉):</strong> Slow but devastatingly powerful. Keep them protected!</li>
+                <li><strong>Infantry (⚔):</strong> The backbone. Deadly inside 200 yards,
+                    nearly harmless past 350.</li>
+                <li><strong>Cavalry (♞):</strong> Scouts and screens. Devastating against broken
+                    men and unsupported guns; slaughtered if they ride at a formed line.</li>
+                <li><strong>Artillery (☉):</strong> Reaches over a thousand yards, but must
+                    unlimber to fire. At canister range it will stop an assault dead —
+                    and it is helpless if infantry reach the guns.</li>
+                <li><strong>Commander (⭐):</strong> Steadies the troops around him, rallies
+                    broken ones, and sees furthest. If he falls, the line shakes.</li>
+              </ul>
+
+              <h3>Ground</h3>
+              <ul>
+                <li>Roads move troops 40% faster — and catch them in column.</li>
+                <li>Woods hide you and shelter you, but you cannot see or shoot from them.</li>
+                <li>Stone walls, sunken lanes and earthworks are the strongest ground on
+                    the field. Attack them frontally at your peril.</li>
+                <li>The river is impassable. Take the bridges.</li>
               </ul>
             </div>
           </div>
@@ -1671,7 +1871,9 @@ function App() {
         <div className="victory-overlay">
           <div className="victory-box">
             <h2>{victory === 1 ? 'UNION VICTORY!' : 'CONFEDERATE VICTORY!'}</h2>
-            <p>{victory === 1 ? 'The Union has prevailed!' : 'The Confederacy holds the field!'}</p>
+            <p>{victory === 1
+              ? 'The Confederate army has quit the field. The Union holds the ground.'
+              : 'The Federal army has withdrawn. The Confederacy holds the field.'}</p>
             <button className="restart-btn" onClick={restart}>Fight Again</button>
           </div>
         </div>
