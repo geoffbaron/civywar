@@ -18,6 +18,7 @@ const initSound = () => {
 };
 
 const engine = new GameEngine();
+if (import.meta.env.DEV) window.civyEngine = engine; // dev console access
 
 // Round a closed ray-cast outline into a smooth curve. A sightline does not
 // end in a razor-straight facet, and the eye reads a soft horizon far better
@@ -184,6 +185,9 @@ function App() {
   const refZoomRef = useRef(16); // Reference zoom level — updated on map ready
   const [showTacticalOverlay, setShowTacticalOverlay] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [gameSpeed, setGameSpeed] = useState(1);
+  const [deploying, setDeploying] = useState(false);
 
   // Compute live transformed map data for calibration
   const transformedGeoTerrain = useMemo(() => {
@@ -238,6 +242,12 @@ function App() {
     }
   }, [realisticMode, tileLayer]);
 
+  // Cover the map-rebuild window when switching battles so the previous
+  // army is never shown fighting on the wrong battlefield.
+  useEffect(() => {
+    setDeploying(true);
+  }, [currentBattle]);
+
   // Initialize game when map is ready — uses ref to always get latest battle
   const onMapReady = useCallback((info) => {
     setMapInfo(info);
@@ -276,8 +286,10 @@ function App() {
       engine.running = false;
       setGameStarted(false);
       setVictory(0);
+      setDeploying(false);
     } catch (e) {
       console.warn('Map init error:', e);
+      setDeploying(false);
     }
   }, []);
 
@@ -400,9 +412,13 @@ function App() {
         contacts: Array.from(engine.contacts[1].values())
           .filter(c => !engine.groups.some(g => g.id === c.id && g.visibleTo1)),
         selectedGroupIds: new Set(engine.selectedGroupIds),
+        pops: engine.pops.map(p => ({ ...p })),
+        elapsed: engine.elapsed,
+        duration: engine.battleDuration,
       });
       const v = engine.checkVictory();
       if (v && !victory) {
+        engine.running = false; // freeze the field behind the after-action report
         setVictory(v);
         soundManager.playVictory();
       }
@@ -635,11 +651,27 @@ function App() {
 
   const startGame = () => {
     initSound();
+    const bf = BATTLEFIELDS[currentBattleRef.current];
+    engine.battleDuration = bf?.duration || 360;
+    engine.paused = false;
+    setPaused(false);
     engine.running = true;
     setGameStarted(true);
   };
+  const togglePause = () => {
+    engine.paused = !engine.paused;
+    setPaused(engine.paused);
+  };
+  const cycleSpeed = () => {
+    const cur = engine.speedMult || 1;
+    const next = cur === 1 ? 2 : cur === 2 ? 4 : 1;
+    engine.speedMult = next;
+    setGameSpeed(next);
+  };
   const endGame = () => {
     engine.running = false;
+    engine.paused = false;
+    setPaused(false);
     setGameStarted(false);
     setVictory(0);
     // Re-init the battlefield from scratch
@@ -707,7 +739,7 @@ function App() {
              <div className="score-total">{union.total}</div>
              <div className="score-details">
                {union.forts} flags<br />
-               {union.inf}⚔ {union.cav}♞ {union.can}☉
+               <span className="score-arm">{union.inf} inf</span> · <span className="score-arm">{union.cav} cav</span> · <span className="score-arm">{union.can} art</span>
              </div>
            </div>
            
@@ -718,7 +750,7 @@ function App() {
              <div className="score-total">{confed.total}</div>
              <div className="score-details">
                {confed.forts} flags<br />
-               {confed.inf}⚔ {confed.cav}♞ {confed.can}☉
+               <span className="score-arm">{confed.inf} inf</span> · <span className="score-arm">{confed.cav} cav</span> · <span className="score-arm">{confed.can} art</span>
              </div>
            </div>
         </div>
@@ -802,7 +834,10 @@ function App() {
         <div className="sidebar-section" data-wt="start-btn" style={{ textAlign: 'center' }}>
           {!gameStarted ? (
             <>
-              <button className="game-start-btn" onClick={startGame}>Start Battle</button>
+              <button className="game-start-btn" onClick={startGame} disabled={deploying}
+                style={deploying ? { opacity: 0.5, cursor: 'wait' } : undefined}>
+                {deploying ? 'Deploying…' : 'Start Battle'}
+              </button>
               <button className="walkthrough-btn" onClick={() => setWalkthroughStep(1)}>How to Play</button>
             </>
           ) : (
@@ -825,6 +860,51 @@ function App() {
 
       <div className="game-container" data-wt="map-area">
 
+      {/* Battle HUD — mission before the fight, clock & flags during it */}
+      {(() => {
+        const bf = BATTLEFIELDS[currentBattle];
+        if (victory > 0) return null;
+        if (!gameStarted) {
+          return bf?.mission ? (
+            <div className="battle-hud battle-hud-mission">
+              <span className="hud-label">Mission</span> {bf.mission}
+            </div>
+          ) : null;
+        }
+        const remaining = Math.max(0, (gameState.duration || 0) - (gameState.elapsed || 0));
+        const mm = Math.floor(remaining / 60);
+        const ss = String(Math.floor(remaining % 60)).padStart(2, '0');
+        const flags1 = gameState.bases.filter(b => b.owner === 1).length;
+        const flags2 = gameState.bases.filter(b => b.owner === 2).length;
+        const lost1 = Math.max(0, Math.round((engine.startStrength[1] || 0) - engine.sideStrength(1)));
+        const lost2 = Math.max(0, Math.round((engine.startStrength[2] || 0) - engine.sideStrength(2)));
+        const urgent = remaining < 60;
+        return (
+          <div className="battle-hud">
+            <span className={`hud-clock ${urgent ? 'hud-clock-urgent' : ''}`}>⏱ {mm}:{ss}</span>
+            <span className="hud-flags">
+              <span className="hud-union">⚑ {flags1}</span>
+              <span className="hud-sep">·</span>
+              <span className="hud-csa">⚑ {flags2}</span>
+            </span>
+            <span className="hud-losses">
+              <span className="hud-union">−{lost1}</span>
+              <span className="hud-sep">·</span>
+              <span className="hud-csa">−{lost2}</span>
+            </span>
+            {paused && <span className="hud-paused">PAUSED</span>}
+            {gameSpeed > 1 && !paused && <span className="hud-speed">{gameSpeed}×</span>}
+          </div>
+        );
+      })()}
+
+      {/* Deploying overlay — covers the map rebuild when switching battles */}
+      {deploying && (
+        <div className="deploying-overlay">
+          <div className="deploying-box">Deploying forces…</div>
+        </div>
+      )}
+
       {/* Zoom + pan controls */}
       <div style={{
         position: 'absolute', top: 12, right: 12, zIndex: 1000,
@@ -843,6 +923,15 @@ function App() {
         <button className="map-ctrl-btn" title="Toggle Tactical Terrain Zones"
           style={{ opacity: showTacticalOverlay ? 1 : 0.55, background: showTacticalOverlay ? '#417a41' : undefined }}
           onClick={() => setShowTacticalOverlay(!showTacticalOverlay)}>🌲</button>
+        {gameStarted && (
+          <>
+            <button className="map-ctrl-btn" title={paused ? 'Resume' : 'Pause'}
+              style={{ background: paused ? '#e8b84b' : undefined }}
+              onClick={togglePause}>{paused ? '▶' : '⏸'}</button>
+            <button className="map-ctrl-btn map-ctrl-speed" title="Battle speed"
+              onClick={cycleSpeed}>{gameSpeed}×</button>
+          </>
+        )}
       </div>
       {isPanMode && (
         <div style={{
@@ -993,6 +1082,18 @@ function App() {
           </g>
         )}
 
+        {/* Floating casualty pop-ups */}
+        {(gameState.pops || []).map(p => (
+          <text key={`pop-${p.id}`}
+            x={p.x} y={p.y - 20 - p.age * 24}
+            textAnchor="middle" pointerEvents="none"
+            fill={p.owner === 1 ? '#a8c4ee' : '#f2a898'}
+            opacity={Math.max(0, 1 - p.age / 1.5)}
+            fontSize="11" fontWeight="bold" fontFamily="'Georgia', serif"
+            style={{ textShadow: '0 1px 3px #000' }}>
+            −{p.n}
+          </text>
+        ))}
 
         {/* Drag arrow from fort */}
         {dragState && sourceObj && (
@@ -1287,7 +1388,19 @@ function App() {
                 {Math.ceil(group.count)}
                 {group.isBroken ? " 🏳️" : ""}
               </text>
-              
+
+              {/* Slow-terrain badge — explains why a unit is crawling
+                  (sits below the NO AMMO badge when both are showing) */}
+              {group.isMoving && group.slowLabel && group.owner === 1 && (
+                <text x={group.x} y={group.y + sh / 2 + (group.ammo <= 0 && group.unitType !== 'commander' ? 20 : 12)}
+                  textAnchor="middle"
+                  fill="#e8c44a" fontSize="8.5" fontStyle="italic"
+                  fontFamily="'Georgia', serif" pointerEvents="none"
+                  style={{ textShadow: '0 1px 2px #000' }}>
+                  ▾ {group.slowLabel === 'Creek' ? 'Fording creek' : group.slowLabel}
+                </text>
+              )}
+
               {/* Recoil — the line rocks back on the discharge. The flame and
                   smoke themselves are drawn by the volley layer above. */}
               {group.fireTimer > 0 && (
@@ -1803,7 +1916,10 @@ function App() {
               <h3>The Objective</h3>
               <p>Take and hold the enemy's positions, or break his army. A command
                  that has lost its ground and better than half its strength quits the
-                 field — battles are not fought to the last man.</p>
+                 field — battles are not fought to the last man. When the battle
+                 clock at the top of the map runs out, the side holding the most
+                 flags carries the day.</p>
+
 
               <h3>Controls</h3>
               <ul>
@@ -1842,11 +1958,11 @@ function App() {
 
               <h3>Troop Types</h3>
               <ul>
-                <li><strong>Infantry (⚔):</strong> The backbone. Deadly inside 200 yards,
+                <li><strong>Infantry (inf):</strong> The backbone. Deadly inside 200 yards,
                     nearly harmless past 350.</li>
-                <li><strong>Cavalry (♞):</strong> Scouts and screens. Devastating against broken
+                <li><strong>Cavalry (cav):</strong> Scouts and screens. Devastating against broken
                     men and unsupported guns; slaughtered if they ride at a formed line.</li>
-                <li><strong>Artillery (☉):</strong> Reaches over a thousand yards, but must
+                <li><strong>Artillery (art):</strong> Reaches over a thousand yards, but must
                     unlimber to fire. At canister range it will stop an assault dead —
                     and it is helpless if infantry reach the guns.</li>
                 <li><strong>Commander (⭐):</strong> Steadies the troops around him, rallies
@@ -1866,18 +1982,48 @@ function App() {
         </div>
       )}
 
-      {/* Victory overlay */}
-      {victory > 0 && (
-        <div className="victory-overlay">
-          <div className="victory-box">
-            <h2>{victory === 1 ? 'UNION VICTORY!' : 'CONFEDERATE VICTORY!'}</h2>
-            <p>{victory === 1
-              ? 'The Confederate army has quit the field. The Union holds the ground.'
-              : 'The Federal army has withdrawn. The Confederacy holds the field.'}</p>
-            <button className="restart-btn" onClick={restart}>Fight Again</button>
+      {/* After-Action Report */}
+      {victory > 0 && (() => {
+        const start1 = Math.round(engine.startStrength[1] || 0);
+        const start2 = Math.round(engine.startStrength[2] || 0);
+        const rem1 = Math.round(engine.sideStrength(1));
+        const rem2 = Math.round(engine.sideStrength(2));
+        const lost1 = Math.max(0, start1 - rem1);
+        const lost2 = Math.max(0, start2 - rem2);
+        const flags1 = engine.bases.filter(b => b.owner === 1).length;
+        const flags2 = engine.bases.filter(b => b.owner === 2).length;
+        const mins = Math.floor((engine.elapsed || 0) / 60);
+        const secs = String(Math.floor((engine.elapsed || 0) % 60)).padStart(2, '0');
+        const bloodier = lost1 + lost2 > 0
+          ? (lost1 >= lost2 ? 'The Union' : 'The Confederacy') + ' paid the heavier price.'
+          : 'A nearly bloodless affair.';
+        return (
+          <div className="victory-overlay">
+            <div className="victory-box aar-box">
+              <h2>{victory === 1 ? 'UNION VICTORY!' : 'CONFEDERATE VICTORY!'}</h2>
+              <p className="aar-reason">{engine.victoryReason || (victory === 1
+                ? 'The Confederate army has quit the field. The Union holds the ground.'
+                : 'The Federal army has withdrawn. The Confederacy holds the field.')}</p>
+              <table className="aar-table">
+                <thead>
+                  <tr><th></th><th className="aar-union">Union</th><th className="aar-csa">CSA</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Engaged</td><td>{start1.toLocaleString()}</td><td>{start2.toLocaleString()}</td></tr>
+                  <tr className="aar-losses"><td>Losses</td><td>−{lost1.toLocaleString()}</td><td>−{lost2.toLocaleString()}</td></tr>
+                  <tr><td>Remaining</td><td>{rem1.toLocaleString()}</td><td>{rem2.toLocaleString()}</td></tr>
+                  <tr><td>Flags held</td><td>{flags1}</td><td>{flags2}</td></tr>
+                </tbody>
+              </table>
+              <p className="aar-note">{bloodier} Battle length: {mins}:{secs}.</p>
+              <div className="aar-buttons">
+                <button className="restart-btn" onClick={restart}>Fight Again</button>
+                <button className="aar-secondary-btn" onClick={endGame}>Review the Field</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       </div>
     </div>
   );

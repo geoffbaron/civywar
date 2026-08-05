@@ -395,6 +395,153 @@ body, html {
   background: rgba(255,215,0,0.28);
 }
 
+/* ─── Battle HUD (clock, flags, losses) ─── */
+.battle-hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(20, 17, 12, 0.88);
+  border: 1px solid rgba(200, 180, 130, 0.35);
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-family: 'Georgia', serif;
+  font-size: 14px;
+  color: #d8cdb4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.battle-hud-mission {
+  font-size: 12.5px;
+  font-style: italic;
+  max-width: 62%;
+  white-space: normal;
+  text-align: center;
+}
+.hud-label {
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 10px;
+  color: #b8a068;
+  margin-right: 6px;
+}
+.hud-clock {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: #f0e6c8;
+}
+.hud-clock-urgent { color: #ff8855; }
+.hud-union { color: #7ba3d8; }
+.hud-csa { color: #e07a63; }
+.hud-sep { opacity: 0.4; margin: 0 2px; }
+.hud-losses { font-size: 12px; opacity: 0.9; }
+.hud-paused {
+  color: #e8b84b;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+.hud-speed {
+  color: #8ddf6a;
+  font-size: 12px;
+  font-weight: bold;
+}
+.map-ctrl-speed {
+  font-size: 13px;
+  font-weight: bold;
+  font-family: 'Georgia', serif;
+}
+
+/* ─── Deploying overlay ─── */
+.deploying-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(24, 20, 14, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.deploying-box {
+  font-family: 'Georgia', serif;
+  font-size: 18px;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: #d8cdb4;
+  padding: 14px 30px;
+  border: 1px solid rgba(200, 180, 130, 0.4);
+  border-radius: 8px;
+  background: rgba(20, 17, 12, 0.9);
+  animation: deployPulse 1.4s ease-in-out infinite;
+}
+@keyframes deployPulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deploying-box { animation: none; }
+}
+
+/* ─── After-Action Report ─── */
+.aar-box { min-width: 380px; max-width: 480px; padding: 28px 40px; }
+.aar-reason { font-size: 0.92rem; }
+.aar-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0 12px;
+  font-family: 'Georgia', serif;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+.aar-table th, .aar-table td {
+  padding: 5px 10px;
+  text-align: right;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.aar-table td:first-child {
+  text-align: left;
+  color: #b8ab90;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.aar-union { color: #7ba3d8; }
+.aar-csa { color: #e07a63; }
+.aar-losses td { color: #e8a084; }
+.aar-losses td:first-child { color: #b8ab90; }
+.aar-note {
+  font-size: 0.85rem !important;
+  opacity: 0.75;
+}
+.aar-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.aar-secondary-btn {
+  padding: 9px 20px;
+  font-size: 0.95rem;
+  font-family: 'Georgia', serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: none;
+  color: #b8ab90;
+  border: 2px solid rgba(184, 171, 144, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.aar-secondary-btn:hover {
+  color: #e0d5b8;
+  border-color: #e0d5b8;
+}
+.score-arm { white-space: nowrap; }
+
 /* ─── Rules Modal ─── */
 .rules-toggle {
   background: none;

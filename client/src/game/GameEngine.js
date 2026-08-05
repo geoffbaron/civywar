@@ -87,6 +87,13 @@ export class GameEngine {
     this._terrainCache = new Map();
     this._smokeGrid = new Map();
     this._smokeCell = 48;
+    this.paused = false;
+    this.speedMult = 1;
+    this.battleDuration = 360; // seconds of battle before the clock decides it
+    this.elapsed = 0;
+    this.pops = [];            // transient casualty pop-ups: {id, x, y, n, owner, age}
+    this.popIdCounter = 0;
+    this.victoryReason = null;
   }
 
   setProjections(latLngToPixel, pixelToLatLng) {
@@ -139,6 +146,9 @@ export class GameEngine {
     this.aiTimer = 0;
     this.time = 0;
     this.selectedGroupIds = new Set();
+    this.elapsed = 0;
+    this.pops = [];
+    this.victoryReason = null;
 
     for (const u of units) {
       this.groups.push(this._makeGroup(u));
@@ -198,6 +208,12 @@ export class GameEngine {
         g.angle = g.owner === 1 ? Math.PI : 0;
       }
     }
+  }
+
+  // Fighting strength (commanders excluded, matching startStrength)
+  sideStrength(owner) {
+    return this.groups.reduce(
+      (s, g) => s + (g.owner === owner && g.unitType !== 'commander' ? g.count : 0), 0);
   }
 
   // Legacy init from old MapData (fallback)
@@ -676,9 +692,17 @@ export class GameEngine {
   }
 
   update(deltaMs) {
-    if (!this.running) return;
-    const dt = Math.min(deltaMs / 1000, 0.1);
+    if (!this.running || this.paused) return;
+    deltaMs *= this.speedMult || 1;
+    const dt = Math.min(deltaMs / 1000, 0.25);
     this.time = (this.time || 0) + deltaMs;
+    this.elapsed += dt;
+
+    // Age & prune casualty pop-ups
+    for (let i = this.pops.length - 1; i >= 0; i--) {
+      this.pops[i].age += dt / (this.speedMult || 1); // pops fade in real time, not game time
+      if (this.pops[i].age > 1.6) this.pops.splice(i, 1);
+    }
 
     // Reset per-frame visual state
     for (const g of this.groups) {
@@ -709,6 +733,7 @@ export class GameEngine {
     this.separateGroups();
     this.resolveFire(dt);
     this.resolveCloseAssault(dt);
+    this.emitCasualtyPops();
     this.resolveCaptures(dt);
     this.cleanupDead(dt);
     this.updateMoraleAndFacing(dt);
@@ -736,6 +761,7 @@ export class GameEngine {
           g.isMoving = false;
           g.stopTime = this.time;
         }
+        g.slowLabel = null;
         continue;
       }
 
@@ -773,6 +799,14 @@ export class GameEngine {
 
       const effectiveSpeed = this.getBaseSpeed(g.unitType) * speedMult;
       const moveDist = effectiveSpeed * dt;
+
+      // Surface WHY a unit is slow so the UI can show it (fording, woods, climbing…)
+      if (speedMult <= 0.6) {
+        g.slowLabel = (destTerrain.label === 'High Ground' && terrain.label !== 'High Ground')
+          ? 'Climbing' : terrain.label;
+      } else {
+        g.slowLabel = null;
+      }
 
       // Smooth rotation: low-pass filter toward movement direction
       let targetAngle = Math.atan2(dy, dx);
@@ -1045,6 +1079,7 @@ export class GameEngine {
   applyCasualties(target, casualties, shooter, isVolley) {
     const before = Math.max(1, target.count);
     target.count -= casualties;
+    target.lossAccum = (target.lossAccum || 0) + casualties;
     target.wasHit = true;
     target.underFire = 3.0;
     target.contact = 6;
@@ -1061,6 +1096,22 @@ export class GameEngine {
 
     if (isVolley && casualties > 0.5) {
       this.spawnImpactEffect(target, shooter, casualties / before);
+    }
+  }
+
+  // Emit floating casualty pop-ups once a group has bled enough to notice
+  emitCasualtyPops() {
+    for (const g of this.groups) {
+      if ((g.lossAccum || 0) >= 3) {
+        this.pops.push({
+          id: ++this.popIdCounter,
+          x: g.x, y: g.y,
+          n: Math.round(g.lossAccum),
+          owner: g.owner,
+          age: 0,
+        });
+        g.lossAccum = 0;
+      }
     }
   }
 
@@ -1095,10 +1146,15 @@ export class GameEngine {
 
         // Modest, mutual bloodletting.
         const bite = 0.012 * dt;
-        a.count -= b.count * bite * (1 - aShare) * 2;
-        b.count -= a.count * bite * aShare * 2;
+        const aLoss = b.count * bite * (1 - aShare) * 2;
+        a.count -= aLoss;
+        a.lossAccum = (a.lossAccum || 0) + aLoss;
+        const bLoss = a.count * bite * aShare * 2;
+        b.count -= bLoss;
+        b.lossAccum = (b.lossAccum || 0) + bLoss;
         a.wasHit = true; b.wasHit = true;
         a.underFire = 2.0; b.underFire = 2.0;
+
       }
     }
   }
@@ -1756,8 +1812,8 @@ export class GameEngine {
 
     const has1 = this.groups.some(g => g.owner === 1);
     const has2 = this.groups.some(g => g.owner === 2);
-    if (!has2) return 1;
-    if (!has1) return 2;
+    if (!has2) { this.victoryReason = 'The Confederate army was destroyed.'; return 1; }
+    if (!has1) { this.victoryReason = 'The Union army was destroyed.'; return 2; }
 
     const flags1 = this.bases.filter(b => b.owner === 1).length;
     const flags2 = this.bases.filter(b => b.owner === 2).length;
@@ -1769,8 +1825,30 @@ export class GameEngine {
       return units.length > 0 && units.every(g => g.isBroken);
     };
 
-    if ((flags2 === 0 && frac2 < 0.45) || frac2 < 0.28 || routed(2)) return 1;
-    if ((flags1 === 0 && frac1 < 0.45) || frac1 < 0.28 || routed(1)) return 2;
+    if ((flags2 === 0 && frac2 < 0.45) || frac2 < 0.28 || routed(2)) {
+      this.victoryReason = routed(2)
+        ? 'The Confederate army broke and fled the field.'
+        : 'The Confederate army was shattered beyond recovery.';
+      return 1;
+    }
+    if ((flags1 === 0 && frac1 < 0.45) || frac1 < 0.28 || routed(1)) {
+      this.victoryReason = routed(1)
+        ? 'The Union army broke and fled the field.'
+        : 'The Union army was shattered beyond recovery.';
+      return 2;
+    }
+
+    // Battle clock: when time expires, flags decide the field
+    if (this.elapsed >= this.battleDuration) {
+      if (flags1 !== flags2) {
+        const w = flags1 > flags2 ? 1 : 2;
+        this.victoryReason = `Time expired holding ${Math.max(flags1, flags2)} of ${this.bases.length} flags.`;
+        return w;
+      }
+      // Flag tie → the army in better shape carries the day
+      this.victoryReason = 'Time expired with flags even — decided by the state of the armies.';
+      return frac1 >= frac2 ? 1 : 2;
+    }
     return 0;
   }
 }
